@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+  <head><% include partials/template/head.ejs %></head>
+  <body style="padding:0px;margin:0px;width:100%;height:1000px;background-color:black;" onload="init()">
+    <div class="timepanel">
+    	
+	 	<span id="datelabel" class="datelabel">
+	 		Date: 7/3/2014, 0:00
+	 	</span>
+	 	
+	 	<div>
+		 	<span class="timeslider" id="time-slider"></span>
+		 	<span class="buttons">
+		 		<button id="pause-button" class="pause-button" type="button">Play Animation</button>
+		 		<button id="bering-button" class="bering-button" type="button">Zoom to Bering Region</button>
+		 	</span>
+	 	</div>
+	 </div>
+
+	<div class="legend-backing"></div>
+ 	<div class="legend" >
+ 		<span style="display:inline-block;">
+ 		<span>Ship Categories:</span>
+	 		<select id="shipping_types" class="shipping_types">
+	 			<option value=100 selected>All</option>
+	 		</select>
+ 		</span>
+ 	</div>
+ 	
+    <div class="map" id="map"></div>
+    <% include partials/template/jsdefaults.ejs %>
+    <% include partials/template/footer.ejs %>
+  </body>
+</html>

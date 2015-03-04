@@ -1,0 +1,111 @@
+{
+    "Cargo and Tanker": [
+        "Palletised Cargo Ship", 
+        "Vegetable Oil Tanker", 
+        "LPG Tanker", 
+        "Cargo ship", 
+        "Ore/Oil Carrier", 
+        "LNG Tanker", 
+        "Crude Oil Tanker", 
+        "Cargo ship (HAZ-B)", 
+        "Vehicles Carrier", 
+        "Refrigerated Cargo Ship", 
+        "Chemical/Oil Products Tanker", 
+        "Tanker", 
+        "Bulk Carrier", 
+        "Passenger/Ro-Ro Cargo Ship", 
+        "Ro-Ro Cargo Ship", 
+        "Container Ship", 
+        "Bulk/Oil Carrier", 
+        "General Cargo Ship", 
+        "Oil Products Tanker", 
+        "Self Discharging Bulk Carrier", 
+        "Chemical Tanker", 
+        "Supply Tender", 
+        "Heavy Load Carrier"
+    ], 
+    "Diving": [
+        "Diving ops"
+    ], 
+    "Dredging": [
+        "Dredging or UW ops", 
+        "Dredger", 
+        "Hopper Dredger"
+    ], 
+    "Enforcement and Safety": [
+        "Patrol Vessel", 
+        "Search & Rescue Vessel", 
+        "Buoy/Lighthouse Vessel", 
+        "Standby Safety Vessel", 
+        "Law enforcment", 
+        "SAR"
+    ], 
+    "Fishing": [
+        "Seal Catcher", 
+        "Fishing Vessel", 
+        "Stern Trawler", 
+        "Trawler", 
+        "Fishing Support Vessel", 
+        "Fish Factory Ship", 
+        "Fish Carrier", 
+        "Fishing vessel"
+    ], 
+    "Icebreaker": [
+        "Icebreaker"
+    ], 
+    "Military": [
+        "Military ops"
+    ], 
+    "Other": [
+        "Landing Craft", 
+        "Other type", 
+        "Local type", 
+        "Training Ship"
+    ], 
+    "Passenger & Cruise Ships": [
+        "Passenger (Cruise) Ship", 
+        "Pleasure craft", 
+        "Passenger/General Cargo Ship", 
+        "Yacht", 
+        "Passenger ship", 
+        "Passenger Ship", 
+        "HSC"
+    ], 
+    "Research": [
+        "Research Survey Vessel", 
+        "Research Vessel"
+    ], 
+    "Sailing": [
+        "Sailing Vessel", 
+        "Sailing vessel"
+    ], 
+    "Tug": [
+        "Port tender", 
+        "Pusher Tug", 
+        "Offshore Tug/Supply Ship", 
+        "Towing vessel", 
+        "Tug", 
+        "Towing vessel (tow>200)"
+    ], 
+    "Unknown": [
+        "Unknown", 
+        "WIG", 
+        "Unknown (HAZ-B)", 
+        "Vessel (function unknown)", 
+        "Other type (HAZ-A)"
+    ], 
+    "Working & Support": [
+        "Cable Layer", 
+        "Salvage Ship", 
+        "Pipe Layer", 
+        "Crane Ship", 
+        "Utility Vessel", 
+        "Anti-polution", 
+        "Drilling Ship", 
+        "Offshore Support Vessel", 
+        "Pollution Control Vessel", 
+        "Motor Hopper", 
+        "Pilot", 
+        "Crew Boat"
+    ]
+}
