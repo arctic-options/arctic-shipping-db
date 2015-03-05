@@ -115,62 +115,128 @@ router.get('/', function(req, res, next) {
   res.render('index', { title: 'Express' });
 });
 
-router.get('/time/:year/:month/:day/:hour', function(req, res, next) {
-  var sql = 'select ST_AsGeoJSON(geom) as geometry from "shipping" WHERE mmsi = \'273350610\';';
-  //console.log(sql);
+router.get('/time/:currdate/:shiptype', function(req, res, next) {
+  
+  thedate = parseCurrentDate(req.params.currdate);
+  console.log("thedate: ",thedate);
+  shipping_type = req.params.shiptype;
+  year = thedate.year;
+  month = padValue(thedate.month);
+  day = padValue(thedate.day);
+  hour = padValue(thedate.hour);
+  minute = parseInt(thedate.minute);
+  console.log(minute)
+  startminute = getMinute(minute);
+  endminute = getMinute(minute+1);
+  console.log("sm", startminute);
+  console.log("em", endminute);
+  start_date = year+"-"+month+"-"+day+" "+hour+":"+startminute+":00";
+  end_date = year+"-"+month+"-"+day+" "+hour+":"+endminute+":00";
+
+  typeclause = "";
+  if(shipping_type != "All"){
+    typeclause = 'type = \''+shipping_type+'\' AND ';
+  }
+  featureCollection = new FeatureCollection();
+
+  //ST_AsGeoJSON(geom) as geometry
+  var sql = 'SELECT row_to_json(shipping) as properties, ST_AsGeoJSON(geom,4,2) as geometry from shipping WHERE '+typeclause+' time >= \''+start_date+'\' AND time < \''+end_date+'\';';
+  
   sequelize.query(sql, arctic).then(function(result){
-    console.log("result: ", result[0])
     results = result[0]
-    var featureCollection = new FeatureCollection();
     for (i = 0; i < results.length; i++)
     {
         vals = JSON.parse(results[i].geometry)
-        featureCollection.features[i] = {"geometry":vals};
+        feat = results[i];
+        console.log(vals);
+        featureCollection.features[i] = {"geometry":vals, "type":"Feature", "properties":feat.properties};
     }
     res.send(featureCollection);
     res.end();
     
   });
+
 });
 
+/*
+
+      "type": "Feature", 
+      "properties": {
+        "OBJECTID": 3, 
+        "mmsi": "273360210", 
+        "long": "129.8406524658203", 
+        "datetime": "2014-07-01 01:09:26", 
+        "time": "2014-07-01 01:09:26", 
+        "lat": "62.15971755981445", 
+        "type": "Unknown"
+      }
+*/
+
+function getMinute(minute){
+  if(minute == 0){
+    return "00";
+  } else {
+    return ""+(10*minute);
+  }
+}
 // GeoJSON Feature Collection
 function FeatureCollection(){
     this.type = 'FeatureCollection';
     this.features = new Array();
+}
+function Feature(){
+  this.type = 'properties';
+
+}
+function parseCurrentDate(currdate){
+
+  var year = 2014;
+  
+  //note: these arent actually minutes, they're ten minute chunks
+  var mins_in_july = 4464;
+  var mins_in_august = 8928;
+  var mins_in_sept = 13248;
+  var mins_in_oct = 17712;
+
+  var minchunk = 24*6;
+  
+  if(currdate > mins_in_july){
+    if(currdate > mins_in_august){
+      if(currdate > mins_in_sept){
+        //its in october
+        month = 10;
+        dayoffset = 92;
+      } else {
+        //its in september
+        month = 9;
+        dayoffset = 62;
+      }
+    } else {
+      //its in august
+      month = 8;
+      dayoffset = 31;
+    }
+  } else {
+        month = 7;
+        dayoffset = 0
+  }
+  day =  Math.floor(currdate/(24*6)) - dayoffset;
+  var hourremainder = (currdate - ((dayoffset+day)*24*6))
+  hour = Math.floor(hourremainder/6);
+  minremainder = hourremainder - hour*6
+  minute = minremainder;
+  var vals = {"year":year, "month":month,"day":day+1, "hour":hour, "minute": minute}
+  return vals;
+}
+
+function padValue(strval){
+  val = parseInt(strval);
+  if(val < 10){
+    return "0"+val
+  } else {
+    return ""+val
+  }
 }
 
 module.exports = app;
-/*
-// RetrieveCadastre
-function RetrieveCadastre(bounds, res){
- 
-    var connString = 'tcp://spatial:spatial@localhost/Spatial';
- 
-    pg.connect(connString, function(err, client) {
- 
-        var sql = 'select ST_AsGeoJSON(geog) as shape ';
-        sql = sql + 'from spatial.state_1 ';
-        sql = sql + 'where geog && ST_GeogFromText(\'SRID=4326;POLYGON(($1 $2,$3 $4,$5 $6,$7 $8,$9 $10))\') ';
-        sql = sql + 'and ST_Intersects(geog, ST_GeogFromText(\'SRID=4326;POLYGON(($11 $12,$13 $14,$15 $16,$17 $18,$19 $20))\'));';
-        
-        var vals = [bounds._southWest.lng, bounds._southWest.lat, bounds._northEast.lng, bounds._southWest.lat, bounds._northEast.lng, bounds._northEast.lat, bounds._southWest.lng, bounds._northEast.lat, bounds._southWest.lng, bounds._southWest.lat];
-        var vals = vals.concat(vals);
-        
-        client.query(sql, vals, function(err, result) {
-            var featureCollection = new FeatureCollection();
- 
-            for (i = 0; i < result.rows.length; i++)
-            {
-                featureCollection.features[i] = JSON.parse(result.rows[i].shape);
-            }
- 
-            res.send(featureCollection);
-        });
-    });
-}
- 
-// GeoJSON Feature Collection
-function FeatureCollection(){
-    this.type = 'FeatureCollection';
-    this.features = new Array();
-}*/
+

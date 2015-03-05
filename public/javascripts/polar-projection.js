@@ -1,16 +1,18 @@
 window.currLayer = null;
-window.animationTime = 350;
+window.animationTime = 100;
 window.theMap = null;
 window.styleMap = null;
 window.destProj = new OpenLayers.Projection("EPSG:3572");
-window.filterRules={}
+
 window.typeRules;
 window.mapExtent;
 window.prevSeaiceLayer = null;
-window.currentDate = 72;
+
+window.currentDate = 432;
 window.startDate = 0;
-window.endDate = 2952;
-window.pauseAnimation=true;
+//window.endDate = 2952;
+window.endDate = 17712;
+window.pauseAnimation=false;
 window.draggingPause = false;
 window.bering = false;
 
@@ -47,6 +49,7 @@ function init(){
   });
 
   var extent = new OpenLayers.Bounds(-9036842.762,-9036842.762, 9036842.762, 9036842.762);
+  //var extent = new OpenLayers.Bounds(-2927693.055900,-3248119.031000,3059854.14560,2356883.213300);
   window.mapExtent = extent;
   Proj4js.defs["EPSG:3572"] = "+title=Arctic Polar Stereographic +proj=laea +lat_0=90 +lon_0=-180 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs";
 
@@ -79,16 +82,13 @@ function init(){
     strategies: [new OpenLayers.Strategy.Fixed()],
     styleMap: window.styleMap,  
     projection: destProj,
-    callback:handler,
     protocol: new OpenLayers.Protocol.HTTP({
       url: gj_url,
       format: new OpenLayers.Format.GeoJSON(),
 
     })
   }); 
-  function handler(request){
-    console.log("------  ",request.responseText);
-  }
+
   window.currLayer = geojson_layer;
   geojson_layer.events.on({"loadend": function(e){console.log(window.currLayer.features)}})
   
@@ -114,9 +114,7 @@ function init(){
   });
 
   theMap.addLayer(geojson_layer);
-  //little diomedes 65.7542° N, 168.9208° W
-  //theMap.setCenter(new OpenLayers.LonLat(-897927,-2581314),5);
-  //-1434069.0134063 N, -172087.76250098
+
   theMap.setCenter(new OpenLayers.LonLat(-172087,-1234069),3);
   var panel = new OpenLayers.Control.CustomNavToolbar();
   theMap.addControl(panel);
@@ -127,7 +125,6 @@ function init(){
   theMap.addControl(click);
   click.activate();
   
-  //-2581314.7147314 N, -897927.99905615 E
 }
 
 function goToBering(){
@@ -174,27 +171,30 @@ function incrementDate(){
 
 function getJSONURLForCurrentDate(){
   
-  var dt = parseCurrentDate();
-  return build_geojson_url_from_date(dt.year, dt.month, dt.day, dt.hour);
+  return build_geojson_url_from_date();
 }
 
 function getSeaiceURLForCurrentDate(){
   var dt = parseCurrentDate();
+
   return build_seaice_url_from_date(dt.year, dt. month, dt.day);
 }
 
 function parseCurrentDate(){
   currdate = window.currentDate;
-  year = 2014;
+  var year = 2014;
   
-  hours_in_july = 744;
-  hours_in_august = 744;
-  hours_in_sept = 720;
-  hours_in_oct = 744;
-  numday = Math.floor(currdate/24)
-  if(currdate > hours_in_july){
-    if(currdate > hours_in_july+hours_in_august){
-      if(currdate > hours_in_july+hours_in_august+hours_in_sept){
+  //note: these arent actually minutes, they're ten minute chunks
+  var mins_in_july = 4464;
+  var mins_in_august = 8928;
+  var mins_in_sept = 13248;
+  var mins_in_oct = 17712;
+
+  var minchunk = 24*6;
+  
+  if(currdate > mins_in_july){
+    if(currdate > mins_in_august){
+      if(currdate > mins_in_sept){
         //its in october
         month = 10;
         dayoffset = 92;
@@ -207,18 +207,20 @@ function parseCurrentDate(){
       //its in august
       month = 8;
       dayoffset = 31;
-      
     }
   } else {
-    //its in july
-    month = 7;
-    dayoffset = 0;
+        month = 7;
+        dayoffset = 0
   }
-  day = numday - dayoffset;
-  hour = currdate - (day*24 + (dayoffset*24))
-
-  return {"year":year, "month":month,"day":day, "hour":hour}
+  day =  Math.floor(currdate/(24*6)) - dayoffset;
+  var hourremainder = (currdate - ((dayoffset+day)*24*6))
+  hour = Math.floor(hourremainder/6);
+  minremainder = hourremainder - hour*6
+  minute = minremainder;
+  var vals = {"year":year, "month":month,"day":day+1, "hour":hour, "minute": minute}
+  return vals;
 }
+
 
 function loadShipCategories(){
   var typeRules = new Array();
@@ -229,23 +231,15 @@ function loadShipCategories(){
 
       $.each( data, function( key, value ) {
           categories.push(key);
-          type_filters = [];
-          for(stype in value){
-            newfilter = new OpenLayers.Filter.Comparison({
-                          type: OpenLayers.Filter.Comparison.NOT_EQUAL_TO,
-                          property: "type", 
-                          value: value[stype]
-                        });
-            type_filters.push(newfilter)
-          }
-
-          logic_filter =  new OpenLayers.Filter.Logical({
-                              type: OpenLayers.Filter.Logical.OR,
-                              filters: type_filters
-                          });
-
+          
+          console.log("adding filter for ",key)
+          newfilter = new OpenLayers.Filter.Comparison({
+              type: OpenLayers.Filter.Comparison.EQUAL_TO,
+              property: "type", 
+              value: key
+            });
           rule = new OpenLayers.Rule({
-                filter: logic_filter,
+                filter: newfilter,
                 symbolizer: {
                   fillColor:nav_colors[key],
                   fillOpacity:1.0,
@@ -256,7 +250,6 @@ function loadShipCategories(){
                 }
           });
           typeRules.push(rule);
-          window.filterRules[key] = rule;
           x+=1
       });
 
@@ -276,7 +269,7 @@ function loadShipCategories(){
       }
 
       $(".shipping_types").change(function(){
-        var val = $( "#shipping_types option:selected").val();
+        var val = getShippingType();
         setNewRuleFilters(val);
         updateLayers(true);
       });
@@ -288,6 +281,13 @@ function loadShipCategories(){
   return typeRules;
 }
 
+function getShippingType(){
+  return $( "#shipping_types option:selected").val();
+}
+function getShippingValue(){
+  return $( "#shipping_types option:selected").text();
+}
+/*
 function getFilterRules(){
   var cats = []
   for(tr in window.filterRules){
@@ -296,6 +296,7 @@ function getFilterRules(){
   }
   return cats;
 }
+*/
 
 function setNewRuleFilters(val){
   sts = window.styleMap.styles['default'];
@@ -328,14 +329,13 @@ function updateLayers(remove_old_markers){
       })
     });
   
-  
   all_layers = window.theMap.layers;
   numlayers = window.theMap.getNumLayers();
   
   for(i=numlayers-1;i>=1;i--){
     if(i == 1){
       currdate = parseCurrentDate();
-      if(currdate.hour == 0 || remove_old_markers){
+      if((currdate.hour == 0 && currdate.minute == 0) || remove_old_markers){
         prevlayer = all_layers[i]
         seaiceurl = getSeaiceURLForCurrentDate();
         seaiceLayer = new OpenLayers.Layer.Image(
@@ -366,13 +366,10 @@ function updateLayers(remove_old_markers){
       if(remove_old_markers){
         killLayer(all_layers[i])
       } else if(i > 2){
-        opacity = i*0.18;
+        opacity = i*0.1;
         all_layers[i].setOpacity(opacity);        
       }
-
-      
     } 
-
     window.theMap.addLayer(currLayer);
   }
 
@@ -394,20 +391,29 @@ function cleanupSeaice(layer){
 }
 
 function shouldRemoveLayers(numlayers){
-   return numlayers > 7;
+   return numlayers > 10;
 }
-
+function getMinute(minchunk){
+  if(minchunk == 0){
+    return "00";
+  } else {
+    return minchunk*6;
+  }
+}
 function updateDate(url){
   var dt = parseCurrentDate();
-  newtime = "Date: "+dt.month+"/"+dt.day+"/"+dt.year+", "+dt.hour+":00";
+  newtime = "Date: "+dt.month+"/"+dt.day+"/"+dt.year+", "+dt.hour;
   
   $("#datelabel").text(newtime);
 
 }
 
-function build_geojson_url_from_date(year, month, day, hour){
-  return "http://localhost:3000/time/"+year+"/"+month+"/"+day+"/"+hour;
-  //return "data/geojson_output/shipping_"+year+"_"+month+"_"+day+"_"+hour+".json";
+function build_geojson_url_from_date(){
+  val = getShippingValue();
+  console.log("ship type: ",val)
+  return "http://localhost:3000/time/"+window.currentDate+"/"+val;
+  //return "http://localhost:3000/time/"+year+"/"+month+"/"+day+"/"+hour;
+  //return "data/test.json";
 }
 
 function build_seaice_url_from_date(year, month, day, hour){
