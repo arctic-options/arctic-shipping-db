@@ -19,32 +19,39 @@ div.map {
 }
 
 div.colorswatch{
-  margin-left:3px;
-  width:24px;
-  height:24px;  
-  border-style:solid;
-  border-color:black;
-  border-width:1px;
 
+  border-style:solid;
+  border-width:1px;
+  opacity:1.0;width:16px;
+  height:16px;
+  margin-top:4px;
+  margin-bottom:5px;
+
+}
+div.legend-text{
+  margin-left:25px;
+  width:250px;
+  vertical-align:middle;
 }
 div.legend-backing{
   background:white;
   box-shadow: 0 1px 7px rgba(0,0,0,.65);
   border-radius: 4px;
-  opacity:0.8;
+  opacity:0.9;
   position:absolute;
-  left:75%;
+  left:74%;
   z-index:1000;
   width:320px;
-  height:350px;
+  height:440px;
+  top:5px;
 }
 
 div.legend{
   opacity:1.0;
   position:absolute;
-  left:77%;
+  left:76%;
   z-index:1001;
-  top:10px;
+  top:70px;
   text-color:black;
 
 }
@@ -56,8 +63,8 @@ div.legend{
 }
 div.timepanel{
   position:absolute;
-  left:75%;
-  top:500px;
+  left:74%;
+  top:520px;
   z-index:9000;
   background:white;
   box-shadow: 0 1px 7px rgba(0,0,0,.65);
@@ -98,4 +105,27 @@ div.timepanel{
 .buttons{
   padding-top:10px;
   display:inline-block;
+}
+.legend-title{
+  opacity:1.0;
+  position:absolute;
+  left:76%;
+  z-index:1001;
+  top:10px;
+  text-color:black;
+}
+
+.page-title {
+  font-size: 22px;
+  font-family: "Dolce Vita";
+  display:block;
+  font-weight:300;
+  margin:0px;
+
+}
+.page-subtitle {
+  font-size: 14px;
+  font-weight: 300;
+  display:block;
+  font-style:italic;
 }

@@ -1,0 +1,54 @@
+{
+    "Cargo and Tanker": [
+		"Cargo ship",
+		"Tanker"
+    ], 
+    "Diving": [
+    	"Dive boat"
+    ], 
+    "Dredging": [
+    	"Dredging"
+    ], 
+    "Enforcement and Safety": [
+  		"Law enforcement vessel",
+  		"Search and rescue",
+  		"Medical transport"
+    ], 
+    "Fishing": [
+    	"Fishing"
+    ], 
+    "Icebreaker": [
+    	"Icebreaker"
+    ], 
+    "Military": [
+    	"Military"
+    ], 
+    "Other": [
+    	"Local vessel",
+    	"Wing in ground",
+		"High speed craft",
+		"Ships and aircraft of States not parties to an armed conflict"
+    ], 
+    "Passenger & Cruise Ships": [
+    	"Pleasure craft"
+    ], 
+    "Research": [
+    	"Research",
+    	"Research Vessel"
+    ], 
+    "Sailing": [
+    	"Sailing"
+    ], 
+    "Tug": [
+    	"Tug"
+    ], 
+    "Unknown": [
+    	"Unknown"
+    ], 
+    "Working & Support": [
+    	"Pilot vessel",
+    	"Port tender",
+    	"Anti-pollution vessel",
+    	"Towing" 
+    ]
+}

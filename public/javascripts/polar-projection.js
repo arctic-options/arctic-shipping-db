@@ -1,5 +1,5 @@
 window.currLayer = null;
-window.animationTime = 100;
+window.animationTime = 150;
 window.theMap = null;
 window.styleMap = null;
 window.destProj = new OpenLayers.Projection("EPSG:3572");
@@ -225,21 +225,30 @@ function parseCurrentDate(){
 function loadShipCategories(){
   var typeRules = new Array();
   
-  $.getJSON( "data/ship_categories.json", function( data ) {
+  $.getJSON( "data/new_ship_categories.json", function( data ) {
       var x=0
       categories = [];
 
       $.each( data, function( key, value ) {
           categories.push(key);
-          
-          console.log("adding filter for ",key)
-          newfilter = new OpenLayers.Filter.Comparison({
-              type: OpenLayers.Filter.Comparison.EQUAL_TO,
-              property: "type", 
-              value: key
-            });
+          type_filters = [];
+          for(stype in value){
+            console.log("type: ", value[stype]);
+            newfilter = new OpenLayers.Filter.Comparison({
+                          type: OpenLayers.Filter.Comparison.EQUAL_TO,
+                          property: "type", 
+                          value: value[stype]
+                        });
+            type_filters.push(newfilter);
+          }
+
+          logic_filter =  new OpenLayers.Filter.Logical({
+                              type: OpenLayers.Filter.Logical.OR,
+                              filters: type_filters
+                          });
+
           rule = new OpenLayers.Rule({
-                filter: newfilter,
+                filter: logic_filter,
                 symbolizer: {
                   fillColor:nav_colors[key],
                   fillOpacity:1.0,
@@ -257,11 +266,14 @@ function loadShipCategories(){
       for(i in categories){
         cat = categories[i];
         var selval = i;
-        colordiv = '<div style="opacity:1.0;width:16px;height:16px;margin-top:5px;margin-bottom:5px;background-color:'+nav_colors[cat]+'"><div style="margin-left:22px;margin-top:3px;margin-bottom:8px;width:250px;vertical-align:middle;">'+cat+'</div></div>';
+        colordiv = '<div class="colorswatch" style="background-color:'+nav_colors[cat]+'"><div class="legend-text">'+cat+'</div></div>';
+        
         $('.legend').append(colordiv);
         optionval = '<option value='+selval+'>'+cat+'</option>';
         $('.shipping_types').append(optionval)
       }
+      seaicediv = '<div class="colorswatch" style="background-color:white"><div class="legend-text">Sea Ice</div></div>';
+      $('.legend').append(seaicediv);
 
       sts = window.styleMap.styles['default'];
       if(sts != null){
@@ -344,7 +356,7 @@ function updateLayers(remove_old_markers){
             window.mapExtent,
             new OpenLayers.Size(353, 341),
             { isBaseLayer: false,
-              opacity: 0.9,
+              opacity: 0.80,
               displayOutsideMaxExtent: true
             }
         );
@@ -366,7 +378,7 @@ function updateLayers(remove_old_markers){
       if(remove_old_markers){
         killLayer(all_layers[i])
       } else if(i > 2){
-        opacity = i*0.1;
+        opacity = i*0.05;
         all_layers[i].setOpacity(opacity);        
       }
     } 
@@ -391,7 +403,7 @@ function cleanupSeaice(layer){
 }
 
 function shouldRemoveLayers(numlayers){
-   return numlayers > 10;
+   return numlayers > 14;
 }
 function getMinute(minchunk){
   if(minchunk == 0){
@@ -402,7 +414,7 @@ function getMinute(minchunk){
 }
 function updateDate(url){
   var dt = parseCurrentDate();
-  newtime = "Date: "+dt.month+"/"+dt.day+"/"+dt.year+", "+dt.hour;
+  newtime = "Date: "+dt.month+"/"+dt.day+"/"+dt.year+", "+dt.hour+":00";
   
   $("#datelabel").text(newtime);
 
@@ -410,7 +422,11 @@ function updateDate(url){
 
 function build_geojson_url_from_date(){
   val = getShippingValue();
-  console.log("ship type: ",val)
+  if(window.theMap){
+    bounds = window.theMap.getExtent();
+    console.log("bounds: ", bounds);    
+  }
+
   return "http://localhost:3000/time/"+window.currentDate+"/"+val;
   //return "http://localhost:3000/time/"+year+"/"+month+"/"+day+"/"+hour;
   //return "data/test.json";

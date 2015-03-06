@@ -26,7 +26,7 @@ var sequelize = new Sequelize('arctic', 'dan_yocum', 'fizzBot1', {
 });
 
 //connect to shipping table
-var arctic = sequelize.define('shipping', {
+var arctic = sequelize.define('shipping2', {
   id:{
     type: Sequelize.STRING,
     field: 'gid'
@@ -103,12 +103,6 @@ app.use(function(err, req, res, next) {
 });
 
 app.locals.arctic = arctic;
-/*
-console.log(arctic);
-arctic.findAll({ where: {mmsi: '273365280'} }).then(function(project) {
-  console.log("project: ", project)
-})
-*/
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
@@ -118,45 +112,40 @@ router.get('/', function(req, res, next) {
 router.get('/time/:currdate/:shiptype', function(req, res, next) {
   
   thedate = parseCurrentDate(req.params.currdate);
-  console.log("thedate: ",thedate);
+
   shipping_type = req.params.shiptype;
   year = thedate.year;
   month = padValue(thedate.month);
   day = padValue(thedate.day);
   hour = padValue(thedate.hour);
   minute = parseInt(thedate.minute);
-  console.log(minute)
+
   startminute = getMinute(minute);
   endminute = getMinute(minute+1);
-  console.log("sm", startminute);
-  console.log("em", endminute);
+
   start_date = year+"-"+month+"-"+day+" "+hour+":"+startminute+":00";
   end_date = year+"-"+month+"-"+day+" "+hour+":"+endminute+":00";
 
-  typeclause = "";
-  if(shipping_type != "All"){
-    typeclause = 'type = \''+shipping_type+'\' AND ';
-  }
+  typeclause = loadTypeClause(shipping_type);
+  
   featureCollection = new FeatureCollection();
 
   //ST_AsGeoJSON(geom) as geometry
-  var sql = 'SELECT row_to_json(shipping) as properties, ST_AsGeoJSON(geom,4,2) as geometry from shipping WHERE '+typeclause+' time >= \''+start_date+'\' AND time < \''+end_date+'\';';
-  
+  var sql = 'SELECT row_to_json(shipping2) as properties, ST_AsGeoJSON(geom,4,2) as geometry from shipping2 WHERE '+typeclause+' datetime >= \''+start_date+'\' AND datetime < \''+end_date+'\';';
   sequelize.query(sql, arctic).then(function(result){
-    results = result[0]
+    results = result[0];
     for (i = 0; i < results.length; i++)
     {
         vals = JSON.parse(results[i].geometry)
         feat = results[i];
-        console.log(vals);
         featureCollection.features[i] = {"geometry":vals, "type":"Feature", "properties":feat.properties};
     }
     res.send(featureCollection);
     res.end();
     
   });
-
 });
+
 
 /*
 
@@ -171,6 +160,38 @@ router.get('/time/:currdate/:shiptype', function(req, res, next) {
         "type": "Unknown"
       }
 */
+
+function loadTypeClause(shiptype){
+  typeclause = ""
+  if(shiptype == "All"){
+    return typeclause;
+  }
+  try{
+    cats = getShipTypeCategories();
+
+    for(cat in cats){
+      
+      if(cat == shiptype){
+        subcats = cats[cat];
+        for (var i=0;i<subcats.length;i++){
+          if(i == 0){
+            typeclause+="( ";
+          }
+          if(i == subcats.length - 1){
+            typeclause+=" type = \'"+subcats[i]+"\') AND ";
+          } else {
+            typeclause+= "type = \'"+subcats[i]+"\' OR ";
+          }
+        }
+        return typeclause;
+      }
+    }
+  } catch(err){
+    console.log(err)
+  }
+
+  return typeclause;
+}
 
 function getMinute(minute){
   if(minute == 0){
@@ -238,5 +259,63 @@ function padValue(strval){
   }
 }
 
+
+function getShipTypeCategories(){
+  cats = {
+    "Cargo and Tanker": [
+      "Cargo ship",
+      "Tanker"
+    ], 
+    "Diving": [
+      "Dive boat"
+    ], 
+    "Dredging": [
+      "Dredging"
+    ], 
+    "Enforcement and Safety": [
+      "Law enforcement vessel",
+      "Search and rescue",
+      "Medical transport"
+    ], 
+    "Fishing": [
+      "Fishing"
+    ], 
+    "Icebreaker": [
+      "Icebreaker"
+    ], 
+    "Military": [
+      "Military"
+    ], 
+    "Other": [
+      "Local vessel",
+      "Wing in ground",
+      "High speed craft",
+      "Ships and aircraft of States not parties to an armed conflict"
+    ], 
+    "Passenger & Cruise Ships": [
+      "Pleasure craft"
+    ], 
+    "Research": [
+      "Research",
+      "Research Vessel"
+    ], 
+    "Sailing": [
+      "Sailing"
+    ], 
+    "Tug": [
+      "Tug"
+    ], 
+    "Unknown": [
+      "Unknown"
+    ], 
+    "Working & Support": [
+      "Pilot vessel",
+      "Port tender",
+      "Anti-pollution vessel",
+      "Towing" 
+    ]
+  }
+  return cats;
+}
 module.exports = app;
 
