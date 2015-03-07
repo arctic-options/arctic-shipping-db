@@ -54,7 +54,8 @@ function init(){
   Proj4js.defs["EPSG:3572"] = "+title=Arctic Polar Stereographic +proj=laea +lat_0=90 +lon_0=-180 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs";
 
   var sourceProj = new OpenLayers.Projection("EPSG:4326");
-
+ 
+  //arcticdataurl = "http://arcticdata.utep.edu/arcgis/services/ARMAP_WorldCities_35N_EPSG3572/MapServer/WMSServer?request=GetCapabilities&service=WMS";
   ginaLayer = new OpenLayers.Layer.WMS(
    "GINA WMS",
    "http://wms.alaskamapped.org/bdl/",
@@ -68,7 +69,9 @@ function init(){
     attribution: 'Best Data Layers provided by <a href="http://www.gina.alaska.edu">GINA</a>',
    }
   );
-
+  /*arcticdataLayer = new OpenLayers.Layer.WMS( "Arctic Data",
+                    arcticdataurl, {layers: 'basic'} );
+  */
   var tr = loadShipCategories();
   
   point_style = new OpenLayers.Style({
