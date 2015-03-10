@@ -12,9 +12,25 @@
 		 	<span class="timeslider" id="time-slider"></span>
 		 	<span class="buttons">
 		 		<!-- <i class="fa fa-pause"></i> -->
-		 		<button id="pause-button" class="pause-button" type="button"><i class="fa fa-play"></i>Pause Animation</button>
-		 		<button id="bering-button" class="bering-button" type="button"><i class="fa search-plus"></i>Zoom to Bering Region</button>
+		 		<button title="Pause Animation" id="pause-button" class="pause-button" type="button">
+		 			<i class="fa fa-pause"></i>
+		 		</button>
+		 		<button title="Play Animation" id="play-button" class="play-button" type="button">
+		 			<i class="fa fa-play"></i>
+		 		</button>
+		 		
+		 		<button title = "Zoom to Bering Region" id="bering-zoomin-button" class="bering-zoomin-button" type="button">
+		 			<i class="fa fa-search-plus"></i>
+		 		</button>
+		 		<button title = "Show Polar Region" id="bering-zoomout-button" class="bering-zoomout-button" type="button">
+		 			<i class="fa fa-search-minus"></i>
+		 		</button>
+
 		 	</span>
+		 	<div style="width:320px;margin-top:15px;margin-left:5px;">
+  				<label for="tags">Filter by Flag State: </label>
+  				<input style="margin-left:5px;" id="tags">
+			</div>
 	 	</div>
 	 </div>
 
@@ -23,7 +39,7 @@
 		<span class="page-title">Arctic Options</span>
 		<span class="page-subtitle">Sea Ice and Shipping Visualization</span>
 	</div>
- 	<div class="legend" >
+ 	<div class="legend">
  		<span>Ship Categories:</span>
 	 		<select id="shipping_types" class="shipping_types">
 	 			<option value=100 selected>All</option>

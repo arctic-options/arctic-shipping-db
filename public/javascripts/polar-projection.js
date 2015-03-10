@@ -43,7 +43,18 @@ function init(){
     window.pauseAnimation = !window.pauseAnimation;
     updatePauseText();
   });
-  $( "#bering-button" ).click(function(){
+
+  $( "#play-button" ).click(function(){
+    window.pauseAnimation = !window.pauseAnimation;
+    updatePauseText();
+  });
+
+  $( "#bering-zoomin-button" ).click(function(){
+    window.bering = !window.bering;
+    goToBering();
+  });
+  
+  $( "#bering-zoomout-button" ).click(function(){
     window.bering = !window.bering;
     goToBering();
   });
@@ -127,26 +138,41 @@ function init(){
   var click = new OpenLayers.Control.Click();
   theMap.addControl(click);
   click.activate();
+  setupFlagText();
   
 }
+
 
 function goToBering(){
 
   if(window.bering){
     latlong = new OpenLayers.LonLat(-897927,-2581314);
     zoomlevel = 5;
-    btext = "Show the Polar Region";
   } else {
     latlong = new OpenLayers.LonLat(-172087,-1234069)
     zoomlevel = 3;
-    btext = "Zoom to Bering Region";
   }
   window.theMap.setCenter(latlong,zoomlevel);
-  $( "#bering-button" ).text(btext);
+  if(window.bering){
+    $( "#bering-zoomin-button" ).hide();
+    $( "#bering-zoomout-button" ).show();
+  } else {
+    $( "#bering-zoomin-button" ).show();
+    $( "#bering-zoomout-button" ).hide();
+  }
+  
 }
+
 function updatePauseText(){
   text = window.pauseAnimation ? "Play Animation" : "Pause Animation"
-  $( "#pause-button" ).text(text)
+  if(window.pauseAnimation){
+    $( "#pause-button" ).show();
+    $("#play-button").hide();
+  } else{
+    $( "#play-button" ).show();
+    $("#pause-button").hide();
+  }
+  
 }
 function isPaused(){
   return (window.draggingPause || window.pauseAnimation);
@@ -507,3 +533,34 @@ OpenLayers.Control.Click = OpenLayers.Class(OpenLayers.Control, {
     }
 
 });
+
+
+function setupFlagText(){
+    var availableTags = [
+      "ActionScript",
+      "AppleScript",
+      "Asp",
+      "BASIC",
+      "C",
+      "C++",
+      "Clojure",
+      "COBOL",
+      "ColdFusion",
+      "Erlang",
+      "Fortran",
+      "Groovy",
+      "Haskell",
+      "Java",
+      "JavaScript",
+      "Lisp",
+      "Perl",
+      "PHP",
+      "Python",
+      "Ruby",
+      "Scala",
+      "Scheme"
+    ];
+    $( "#tags" ).autocomplete({
+      source: availableTags
+    });
+}
