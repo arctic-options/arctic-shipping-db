@@ -60,6 +60,10 @@ function init(){
     goToBering();
   });
 
+  $( "#flagstate-filter" ).click(function(){
+    updateLayers(true);
+  });
+
   var extent = new OpenLayers.Bounds(-9036842.762,-9036842.762, 9036842.762, 9036842.762);
   //var extent = new OpenLayers.Bounds(-2927693.055900,-3248119.031000,3059854.14560,2356883.213300);
   window.mapExtent = extent;
@@ -67,7 +71,6 @@ function init(){
 
   var sourceProj = new OpenLayers.Projection("EPSG:4326");
  
-  //arcticdataurl = "http://arcticdata.utep.edu/arcgis/services/ARMAP_WorldCities_35N_EPSG3572/MapServer/WMSServer?request=GetCapabilities&service=WMS";
   ginaLayer = new OpenLayers.Layer.WMS(
    "GINA WMS",
    "http://wms.alaskamapped.org/bdl/",
@@ -81,11 +84,8 @@ function init(){
     attribution: 'Best Data Layers provided by <a href="http://www.gina.alaska.edu">GINA</a>',
    }
   );
-  /*arcticdataLayer = new OpenLayers.Layer.WMS( "Arctic Data",
-                    arcticdataurl, {layers: 'basic'} );
-  */
+
   var tr = loadShipCategories();
-  
   point_style = new OpenLayers.Style({
     rules: tr
   });
@@ -100,12 +100,10 @@ function init(){
     protocol: new OpenLayers.Protocol.HTTP({
       url: gj_url,
       format: new OpenLayers.Format.GeoJSON(),
-
     })
   }); 
 
   window.currLayer = geojson_layer;
-  
 
   var imgStat = 'http://nsidc.org/cgi-bin/atlas_north?service=WMS&version =1.1.1&request =GetMap&srs=EPSG:3572&transparent=true&format=image/png&width=1000&height=1000&bbox=-9036842.762,-9036842.762, 9036842.762, 9036842.762&layers=sea_ice_extent_01'
   seaiceURL = getSeaiceURLForCurrentDate()
@@ -134,7 +132,6 @@ function init(){
   theMap.addControl(panel);
 
   window.animateTimer = window.setInterval(incrementDate, window.animationTime);
-  
   var click = new OpenLayers.Control.Click();
   theMap.addControl(click);
   click.activate();
@@ -144,7 +141,6 @@ function init(){
 
 
 function goToBering(){
-
   if(window.bering){
     latlong = new OpenLayers.LonLat(-897927,-2581314);
     zoomlevel = 5;
@@ -160,7 +156,6 @@ function goToBering(){
     $( "#bering-zoomin-button" ).show();
     $( "#bering-zoomout-button" ).hide();
   }
-  
 }
 
 function updatePauseText(){
@@ -172,11 +167,12 @@ function updatePauseText(){
     $( "#pause-button" ).show();
     $("#play-button").hide();
   }
-  
 }
+
 function isPaused(){
   return (window.draggingPause || window.pauseAnimation);
 }
+
 function changeSliderValue(newDate){
   window.currentDate = newDate;
   updateLayers(true);
@@ -187,8 +183,6 @@ function incrementDate(){
     return;
   }
   newDate = window.currentDate+1;
-
-  
   if(newDate > endDate){
     return;
   }
@@ -199,13 +193,11 @@ function incrementDate(){
 }
 
 function getJSONURLForCurrentDate(){
-  
   return build_geojson_url_from_date();
 }
 
 function getSeaiceURLForCurrentDate(){
   var dt = parseCurrentDate();
-
   return build_seaice_url_from_date(dt.year, dt. month, dt.day);
 }
 
@@ -350,15 +342,15 @@ function updateLayers(remove_old_markers){
   newurl = getJSONURLForCurrentDate();
   prevSeaiceLayer = null;
   currLayer = new OpenLayers.Layer.Vector("GeoJSON",{
-      strategies: [new OpenLayers.Strategy.Fixed()],
-      styleMap: window.styleMap,  
-      projection: window.destProj,
+    strategies: [new OpenLayers.Strategy.Fixed()],
+    styleMap: window.styleMap,  
+    projection: window.destProj,
 
-      protocol: new OpenLayers.Protocol.HTTP({
-        url: newurl,
-        format: new OpenLayers.Format.GeoJSON()
-      })
-    });
+    protocol: new OpenLayers.Protocol.HTTP({
+      url: newurl,
+      format: new OpenLayers.Format.GeoJSON()
+    })
+  });
   
   all_layers = window.theMap.layers;
   numlayers = window.theMap.getNumLayers();
@@ -403,7 +395,6 @@ function updateLayers(remove_old_markers){
     } 
     window.theMap.addLayer(currLayer);
   }
-
   updateDate(newurl);
 }
 
@@ -418,12 +409,12 @@ function cleanupSeaice(layer){
     window.theMap.removeLayer(layer);
     layer.destroy();    
   } 
- 
 }
 
 function shouldRemoveLayers(numlayers){
    return numlayers > 14;
 }
+
 function getMinute(minchunk){
   if(minchunk == 0){
     return "00";
@@ -431,12 +422,11 @@ function getMinute(minchunk){
     return minchunk*6;
   }
 }
+
 function updateDate(url){
   var dt = parseCurrentDate();
   newtime = "Date: "+dt.month+"/"+dt.day+"/"+dt.year+", "+dt.hour+":00";
-  
   $("#datelabel").text(newtime);
-
 }
 
 function build_geojson_url_from_date(){
@@ -452,8 +442,8 @@ function getFlagValue(){
   console.log("selected flag values: ",window.flagStates.toString());
   return window.flagStates.toString();
 }
-function build_seaice_url_from_date(year, month, day, hour){
 
+function build_seaice_url_from_date(year, month, day, hour){
   pre = "images/masie_seaice/masie_ice_r00_v01_2014";
   post = "_4km.png";
   dim = {7:31, 8:31, 9:30, 10:31}
@@ -521,6 +511,7 @@ OpenLayers.Control.Click = OpenLayers.Class(OpenLayers.Control, {
                                   + lonlat.lon + " E");
     }
 });
+
 function getFlagTextForId(flagstates, id){
   for(var i=0;i<flagstates.length;i++){
     if(flagstates[i].id == id){
@@ -534,33 +525,34 @@ function getFlagTextForId(flagstates, id){
   }
   return "";
 }
+
 function setupFlagText(){
-  var fs = FlagStates.flagStates;
-  console.log(fs);
-  var ddparent = $("#timepanel");
-  $("#flagstate").select2({
-    placeholder: 'Filter by Flag State',
-    data: fs,
-    multiple:true
-  });
+  try{
+    var fs = FlagStates.flagStates;
+    var ddparent = $("#timepanel");
+    $("#flagstate").select2({
+      placeholder: 'Filter by Flag State',
+      data: fs,
+      multiple:true
+    });
 
-  $("#flagstate").select2().on("change", function(e) {
-
-    var selectedKeys = $("#flagstate").select2().val();
-    var fsvals = [];
-    if(selectedKeys == null || selectedKeys.length == 0){
-      fsvals.push("All")
-    } else{
-      console.log("fooooooo", selectedKeys);
-      for(var i=0;i<selectedKeys.length;i++){
-        var key = parseInt(selectedKeys[i]);
-        //console.log("key: ", key);
-        var val = getFlagTextForId(fs, key);
-        console.log("selected flag value is ", val);
-        fsvals.push(val);
+    $("#flagstate").select2().on("change", function(e) {
+      var selectedKeys = $("#flagstate").select2().val();
+      var fsvals = [];
+      if(selectedKeys == null || selectedKeys.length == 0){
+        fsvals.push("All")
+      } else{
+        for(var i=0;i<selectedKeys.length;i++){
+          var key = parseInt(selectedKeys[i]);
+          
+          var val = getFlagTextForId(fs, key);
+          fsvals.push(val);
+        }
       }
-    }
-    window.flagStates = fsvals;
-    updateLayers(true);
-  });
+      window.flagStates = fsvals;
+      updateLayers(true);
+    });
+  } catch(err){
+
+  }
 }
