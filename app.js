@@ -43,6 +43,10 @@ var arctic = sequelize.define('shipping2', {
     type: Sequelize.STRING,
     field: 'type'
   },
+  flag: {
+    type: Sequelize.STRING,
+    field: 'flag'
+  },
   name: {
     type: Sequelize.STRING,
     field: 'name'
@@ -109,57 +113,74 @@ router.get('/', function(req, res, next) {
   res.render('index', { title: 'Express' });
 });
 
-router.get('/time/:currdate/:shiptype', function(req, res, next) {
-  
-  thedate = parseCurrentDate(req.params.currdate);
+router.get('/time/:currdate/:shiptype/:flagstates', function(req, res, next) {
+  try{
+    thedate = parseCurrentDate(req.params.currdate);
+    flagclause = parseFlagStates(req.params.flagstates);
+    console.log("flagclause: "+flagclause);
+    shipping_type = req.params.shiptype;
+    year = thedate.year;
+    month = padValue(thedate.month);
+    day = padValue(thedate.day);
+    hour = padValue(thedate.hour);
+    minute = parseInt(thedate.minute);
 
-  shipping_type = req.params.shiptype;
-  year = thedate.year;
-  month = padValue(thedate.month);
-  day = padValue(thedate.day);
-  hour = padValue(thedate.hour);
-  minute = parseInt(thedate.minute);
+    startminute = getMinute(minute);
+    endminute = getMinute(minute+1);
 
-  startminute = getMinute(minute);
-  endminute = getMinute(minute+1);
+    start_date = year+"-"+month+"-"+day+" "+hour+":"+startminute+":00";
+    end_date = year+"-"+month+"-"+day+" "+hour+":"+endminute+":00";
 
-  start_date = year+"-"+month+"-"+day+" "+hour+":"+startminute+":00";
-  end_date = year+"-"+month+"-"+day+" "+hour+":"+endminute+":00";
-
-  typeclause = loadTypeClause(shipping_type);
-  
-  featureCollection = new FeatureCollection();
-
-  //ST_AsGeoJSON(geom) as geometry
-  var sql = 'SELECT row_to_json(shipping2) as properties, ST_AsGeoJSON(geom,4,2) as geometry from shipping2 WHERE '+typeclause+' datetime >= \''+start_date+'\' AND datetime < \''+end_date+'\';';
-  sequelize.query(sql, arctic).then(function(result){
-    results = result[0];
-    for (i = 0; i < results.length; i++)
-    {
-        vals = JSON.parse(results[i].geometry)
-        feat = results[i];
-        featureCollection.features[i] = {"geometry":vals, "type":"Feature", "properties":feat.properties};
-    }
-    res.send(featureCollection);
-    res.end();
+    typeclause = loadTypeClause(shipping_type);
     
-  });
+    featureCollection = new FeatureCollection();
+
+    //ST_AsGeoJSON(geom) as geometry
+    var sql = 'SELECT row_to_json(shipping2) as properties, ST_AsGeoJSON(geom,4,2) as geometry from shipping2 WHERE '+typeclause+flagclause+' datetime >= \''+start_date+'\' AND datetime < \''+end_date+'\';';
+    sequelize.query(sql, arctic).then(function(result){
+      results = result[0];
+      for (i = 0; i < results.length; i++)
+      {
+          vals = JSON.parse(results[i].geometry)
+          feat = results[i];
+          featureCollection.features[i] = {"geometry":vals, "type":"Feature", "properties":feat.properties};
+      }
+      res.send(featureCollection);
+      res.end();
+      
+    });
+  } catch(err){
+    console.log("error searching: ",err)
+  }
 });
 
-
-/*
-
-      "type": "Feature", 
-      "properties": {
-        "OBJECTID": 3, 
-        "mmsi": "273360210", 
-        "long": "129.8406524658203", 
-        "datetime": "2014-07-01 01:09:26", 
-        "time": "2014-07-01 01:09:26", 
-        "lat": "62.15971755981445", 
-        "type": "Unknown"
+function parseFlagStates(flagstates){
+  flagclause = ""
+  var fs_keys = flagstates.split(',');
+  
+  try{
+    if(fs_keys.length == 1 && fs_keys[0].trim() == "All"){
+      return "";
+    } else {
+      
+      for(var i=0;i<fs_keys.length;i++){
+        
+        if(i == 0){
+          flagclause+= "( ";
+        }
+        if(i == fs_keys.length - 1){
+          flagclause+=" flag LIKE \'"+fs_keys[i]+"\%') AND ";
+        } else {
+          flagclause+=" flag LIKE \'"+fs_keys[i]+"\%' OR ";
+        }
       }
-*/
+      return flagclause;
+    }
+  } catch(err){
+    console.log(err);
+  }
+  return flagclause;
+}
 
 function loadTypeClause(shiptype){
   typeclause = ""
@@ -316,6 +337,24 @@ function getShipTypeCategories(){
     ]
   }
   return cats;
+}
+
+function getFlagStates(){
+  var fs = [ {id:0, text:"Afghanistan"},
+    {id:1, text:"Alaska (State of)"},
+    {id:2, text:"Antigua and Barbuda"},
+    {id:3, text:"Armenia (Republic of)"},
+    {id:4, text:"Australia"},
+    {id:5, text:"Austria"},
+    {id:6, text:"Azores"},
+    {id:7, text:"Bahamas (Commonwealth of the)"},
+    {id:8, text:"Barbados"},
+    {id:9, text:"Belgium"},
+    {id:10, text:"Belize"},
+    {id:11, text:"Bermuda"},
+    {id:12, text:"Brazil (Federative Republic of)"},
+    {id:13, text:"British Virgin Islands"}];
+  return fs;
 }
 module.exports = app;
 

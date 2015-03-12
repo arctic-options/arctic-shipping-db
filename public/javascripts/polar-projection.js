@@ -15,6 +15,7 @@ window.endDate = 17712;
 window.pauseAnimation=false;
 window.draggingPause = false;
 window.bering = false;
+window.flagStates = ["All"];
 
 //(-5955554.0585227,-4707645.05374313,5619445.9414773,4567354.94625687)
 //(-9036842.762,-9036842.762, 9036842.762, 9036842.762)
@@ -40,12 +41,12 @@ function init(){
 
 
   $( "#pause-button" ).click(function(){
-    window.pauseAnimation = !window.pauseAnimation;
+    window.pauseAnimation = true;
     updatePauseText();
   });
 
   $( "#play-button" ).click(function(){
-    window.pauseAnimation = !window.pauseAnimation;
+    window.pauseAnimation = false;
     updatePauseText();
   });
 
@@ -53,7 +54,7 @@ function init(){
     window.bering = !window.bering;
     goToBering();
   });
-  
+
   $( "#bering-zoomout-button" ).click(function(){
     window.bering = !window.bering;
     goToBering();
@@ -104,7 +105,6 @@ function init(){
   }); 
 
   window.currLayer = geojson_layer;
-  geojson_layer.events.on({"loadend": function(e){console.log(window.currLayer.features)}})
   
 
   var imgStat = 'http://nsidc.org/cgi-bin/atlas_north?service=WMS&version =1.1.1&request =GetMap&srs=EPSG:3572&transparent=true&format=image/png&width=1000&height=1000&bbox=-9036842.762,-9036842.762, 9036842.762, 9036842.762&layers=sea_ice_extent_01'
@@ -166,11 +166,11 @@ function goToBering(){
 function updatePauseText(){
   text = window.pauseAnimation ? "Play Animation" : "Pause Animation"
   if(window.pauseAnimation){
-    $( "#pause-button" ).show();
-    $("#play-button").hide();
-  } else{
     $( "#play-button" ).show();
     $("#pause-button").hide();
+  } else{
+    $( "#pause-button" ).show();
+    $("#play-button").hide();
   }
   
 }
@@ -262,7 +262,6 @@ function loadShipCategories(){
           categories.push(key);
           type_filters = [];
           for(stype in value){
-            console.log("type: ", value[stype]);
             newfilter = new OpenLayers.Filter.Comparison({
                           type: OpenLayers.Filter.Comparison.EQUAL_TO,
                           property: "type", 
@@ -297,12 +296,12 @@ function loadShipCategories(){
         var selval = i;
         colordiv = '<div class="colorswatch" style="background-color:'+nav_colors[cat]+'"><div class="legend-text">'+cat+'</div></div>';
         
-        $('.legend').append(colordiv);
+        $('.categories').append(colordiv);
         optionval = '<option value='+selval+'>'+cat+'</option>';
         $('.shipping_types').append(optionval)
       }
       seaicediv = '<div class="colorswatch" style="background-color:white"><div class="legend-text">Sea Ice</div></div>';
-      $('.legend').append(seaicediv);
+      $('.categories').append(seaicediv);
 
       sts = window.styleMap.styles['default'];
       if(sts != null){
@@ -328,16 +327,7 @@ function getShippingType(){
 function getShippingValue(){
   return $( "#shipping_types option:selected").text();
 }
-/*
-function getFilterRules(){
-  var cats = []
-  for(tr in window.filterRules){
-    rule = window.filterRules[tr];
-    cats.push(rule);
-  }
-  return cats;
-}
-*/
+
 
 function setNewRuleFilters(val){
   sts = window.styleMap.styles['default'];
@@ -450,17 +440,18 @@ function updateDate(url){
 }
 
 function build_geojson_url_from_date(){
-  val = getShippingValue();
+  shippingval = getShippingValue();
+  flagval = getFlagValue();
   if(window.theMap){
     bounds = window.theMap.getExtent();
-    console.log("bounds: ", bounds);    
   }
-
-  return "http://localhost:3000/time/"+window.currentDate+"/"+val;
-  //return "http://localhost:3000/time/"+year+"/"+month+"/"+day+"/"+hour;
-  //return "data/test.json";
+  return "http://localhost:3000/time/"+window.currentDate+"/"+shippingval+"/"+flagval;
 }
 
+function getFlagValue(){
+  console.log("selected flag values: ",window.flagStates.toString());
+  return window.flagStates.toString();
+}
 function build_seaice_url_from_date(year, month, day, hour){
 
   pre = "images/masie_seaice/masie_ice_r00_v01_2014";
@@ -511,7 +502,6 @@ OpenLayers.Control.Click = OpenLayers.Class(OpenLayers.Control, {
         'stopSingle': false,
         'stopDouble': false
     },
-
     initialize: function(options) {
         this.handlerOptions = OpenLayers.Util.extend(
             {}, this.defaultHandlerOptions
@@ -525,42 +515,52 @@ OpenLayers.Control.Click = OpenLayers.Class(OpenLayers.Control, {
             }, this.handlerOptions
         );
     }, 
-
     trigger: function(e) {
         var lonlat = window.theMap.getLonLatFromPixel(e.xy);
         alert("You clicked near " + lonlat.lat + " N, " +
                                   + lonlat.lon + " E");
     }
-
 });
-
-
+function getFlagTextForId(flagstates, id){
+  for(var i=0;i<flagstates.length;i++){
+    if(flagstates[i].id == id){
+      var t = flagstates[i].text;
+      if(t == "China (People's Republic of)"){
+        return "China (People";
+      } else {
+        return t;
+      }
+    }
+  }
+  return "";
+}
 function setupFlagText(){
-    var availableTags = [
-      "ActionScript",
-      "AppleScript",
-      "Asp",
-      "BASIC",
-      "C",
-      "C++",
-      "Clojure",
-      "COBOL",
-      "ColdFusion",
-      "Erlang",
-      "Fortran",
-      "Groovy",
-      "Haskell",
-      "Java",
-      "JavaScript",
-      "Lisp",
-      "Perl",
-      "PHP",
-      "Python",
-      "Ruby",
-      "Scala",
-      "Scheme"
-    ];
-    $( "#tags" ).autocomplete({
-      source: availableTags
-    });
+  var fs = FlagStates.flagStates;
+  console.log(fs);
+  var ddparent = $("#timepanel");
+  $("#flagstate").select2({
+    placeholder: 'Filter by Flag State',
+    data: fs,
+    multiple:true
+  });
+
+  $("#flagstate").select2().on("change", function(e) {
+
+    var selectedKeys = $("#flagstate").select2().val();
+    var fsvals = [];
+    if(selectedKeys == null || selectedKeys.length == 0){
+      fsvals.push("All")
+    } else{
+      console.log("fooooooo", selectedKeys);
+      for(var i=0;i<selectedKeys.length;i++){
+        var key = parseInt(selectedKeys[i]);
+        //console.log("key: ", key);
+        var val = getFlagTextForId(fs, key);
+        console.log("selected flag value is ", val);
+        fsvals.push(val);
+      }
+    }
+    window.flagStates = fsvals;
+    updateLayers(true);
+  });
 }
