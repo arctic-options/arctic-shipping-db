@@ -118,7 +118,7 @@ router.get('/time/:currdate/:shiptype/:flagstates', function(req, res, next) {
   try{
     thedate = parseCurrentDate(req.params.currdate);
     flagclause = parseFlagStates(req.params.flagstates);
-    console.log("flagclause: "+flagclause);
+
     shipping_type = req.params.shiptype;
     year = thedate.year;
     month = padValue(thedate.month);

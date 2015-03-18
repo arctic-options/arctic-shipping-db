@@ -435,7 +435,7 @@ function build_geojson_url_from_date(){
   if(window.theMap){
     bounds = window.theMap.getExtent();
   }
-  return "http://127.0.0.1:3000/time/"+window.currentDate+"/"+shippingval+"/"+flagval;
+  return "http://128.111.84.75:3000/time/"+window.currentDate+"/"+shippingval+"/"+flagval;
 }
 
 function getFlagValue(){
