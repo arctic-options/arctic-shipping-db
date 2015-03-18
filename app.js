@@ -15,7 +15,7 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
 //sequelize setup
-var sequelize = new Sequelize('arctic', 'dan_yocum', 'fizzBot1', {
+var sequelize = new Sequelize('arctic', 'dan_yocum', 'fitzBot1', {
   host: 'localhost',
   dialect: 'postgres',
 
