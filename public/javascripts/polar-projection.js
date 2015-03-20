@@ -490,7 +490,7 @@ function build_geojson_url_from_date(){
   if(window.theMap){
     bounds = window.theMap.getExtent();
   }
-  return "http://localhost:3000/time/"+window.currentDate+"/"+shippingval+"/"+flagval;
+  return "http://hardison.nceas.ucsb.edu:3000/time/"+window.currentDate+"/"+shippingval+"/"+flagval;
 }
 
 function getFlagValue(){
