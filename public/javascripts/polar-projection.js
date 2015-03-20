@@ -1,5 +1,5 @@
 window.currLayer = null;
-window.animationTime = 150;
+window.animationTime = 100;
 window.theMap = null;
 window.styleMap = null;
 window.destProj = new OpenLayers.Projection("EPSG:3572");
@@ -8,7 +8,7 @@ window.typeRules;
 window.mapExtent;
 window.prevSeaiceLayer = null;
 
-window.currentDate = 432;
+window.currentDate = 552;
 window.startDate = 0;
 //window.endDate = 2952;
 window.endDate = 17712;
@@ -16,6 +16,7 @@ window.pauseAnimation=false;
 window.draggingPause = false;
 window.bering = false;
 window.flagStates = ["All"];
+window.categories = null;
 
 //(-5955554.0585227,-4707645.05374313,5619445.9414773,4567354.94625687)
 //(-9036842.762,-9036842.762, 9036842.762, 9036842.762)
@@ -49,7 +50,7 @@ function init(){
     window.pauseAnimation = false;
     updatePauseText();
   });
-
+  /*
   $( "#bering-zoomin-button" ).click(function(){
     window.bering = !window.bering;
     goToBering();
@@ -59,7 +60,7 @@ function init(){
     window.bering = !window.bering;
     goToBering();
   });
-
+  */
   $( "#flagstate-filter" ).click(function(){
     updateLayers(true);
   });
@@ -84,6 +85,7 @@ function init(){
     attribution: 'Best Data Layers provided by <a href="http://www.gina.alaska.edu">GINA</a>',
    }
   );
+  ginaLayer.id = "gina";
 
   var tr = loadShipCategories();
   point_style = new OpenLayers.Style({
@@ -113,11 +115,13 @@ function init(){
       extent,
       new OpenLayers.Size(353, 341),
       { isBaseLayer: false,
-        opacity: 0.9,
-        displayOutsideMaxExtent: true
+        opacity: 1.0,
+        displayOutsideMaxExtent: false
       }
   );
-  
+  layer.id = "seaice";
+  var zoom = new OpenLayers.Control.Zoom(new OpenLayers.Pixel(10,850));
+
   theMap = new OpenLayers.Map('map', {
       projection:destProj,
       layers:[ginaLayer, layer],
@@ -132,11 +136,8 @@ function init(){
   theMap.addControl(panel);
 
   window.animateTimer = window.setInterval(incrementDate, window.animationTime);
-  var click = new OpenLayers.Control.Click();
-  theMap.addControl(click);
-  click.activate();
+
   setupFlagText();
-  
 }
 
 
@@ -272,7 +273,7 @@ function loadShipCategories(){
                 symbolizer: {
                   fillColor:nav_colors[key],
                   fillOpacity:1.0,
-                  strokeWidth:4.0,
+                  strokeWidth:1.0,
                   strokeColor:nav_colors[key],
                   strokeOpacity:0.1,
                   pointRadius:2,
@@ -283,18 +284,14 @@ function loadShipCategories(){
       });
 
       categories.sort();
+      window.categories = categories;
+    
       for(i in categories){
         cat = categories[i];
         var selval = i;
-        colordiv = '<div class="colorswatch" style="background-color:'+nav_colors[cat]+'"><div class="legend-text">'+cat+'</div></div>';
-        
-        $('.categories').append(colordiv);
         optionval = '<option value='+selval+'>'+cat+'</option>';
         $('.shipping_types').append(optionval)
       }
-      seaicediv = '<div class="colorswatch" style="background-color:white"><div class="legend-text">Sea Ice</div></div>';
-      $('.categories').append(seaicediv);
-
       sts = window.styleMap.styles['default'];
       if(sts != null){
         sts.rules = [typeRules[4]];
@@ -304,13 +301,36 @@ function loadShipCategories(){
         var val = getShippingType();
         setNewRuleFilters(val);
         updateLayers(true);
+        buildLegend();
       });
       window.typeRules = typeRules;
       $('.shipping_types option[value=4]').prop('selected', true);
-
+      buildLegend();
     });
 
   return typeRules;
+}
+function buildLegend(){
+
+  var cat = getShippingType();
+  console.log(cat);
+  
+  $('.categories').empty();
+  if(cat == 100){
+
+    console.log("all");
+    for(i in window.categories){
+      var category = window.categories[i];
+      colordiv = '<div class="colorswatch" style="background-color:'+nav_colors[category]+'"><div class="legend-text">'+category+'</div></div>';
+      $('.categories').append(colordiv);
+    }
+  } else {
+    var category = window.categories[cat];
+    colordiv = '<div class="colorswatch" style="background-color:'+nav_colors[category]+'"><div class="legend-text">'+category+'</div></div>';
+    $('.categories').append(colordiv);
+  }
+  seaicediv = '<div class="colorswatch" style="background-color:white"><div class="legend-text">Sea Ice</div></div>';
+   $('.categories').append(seaicediv);
 }
 
 function getShippingType(){
@@ -335,12 +355,28 @@ function setNewRuleFilters(val){
   }
 }
 
+function getNumBaseLayers(){
+  var ginalayer = window.theMap.getLayer("gina");
+  var seaicelayer = window.theMap.getLayer("seaice");
+  var oldSeaIceLayer = window.theMap.getLayer("oldseaice");
+  var numbase = 0;
+  if(ginalayer){
+    numbase+=1;
+  } 
+  if(seaicelayer){
+    numbase+=1;
+  }
+  if(oldSeaIceLayer){
+    numbase+=1;
+  }
+  return numbase;
+}
+
 function updateLayers(remove_old_markers){
 
-  cleanupSeaice(window.prevSeaiceLayer);
-  currUrl = window.currLayer.protocol.url;
   newurl = getJSONURLForCurrentDate();
-  prevSeaiceLayer = null;
+  numbaselayers = getNumBaseLayers();
+
   currLayer = new OpenLayers.Layer.Vector("GeoJSON",{
     strategies: [new OpenLayers.Strategy.Fixed()],
     styleMap: window.styleMap,  
@@ -354,65 +390,82 @@ function updateLayers(remove_old_markers){
   
   all_layers = window.theMap.layers;
   numlayers = window.theMap.getNumLayers();
-  
-  for(i=numlayers-1;i>=1;i--){
-    if(i == 1){
-      currdate = parseCurrentDate();
-      if((currdate.hour == 0 && currdate.minute == 0) || remove_old_markers){
-        prevlayer = all_layers[i]
-        seaiceurl = getSeaiceURLForCurrentDate();
-        seaiceLayer = new OpenLayers.Layer.Image(
-            'SeaIce',
-            seaiceurl,
-            window.mapExtent,
-            new OpenLayers.Size(353, 341),
-            { isBaseLayer: false,
-              opacity: 0.80,
-              displayOutsideMaxExtent: true
-            }
-        );
-        window.theMap.addLayer(seaiceLayer);
-        window.theMap.setLayerIndex(seaiceLayer, 1)
-       
-        window.prevSeaiceLayer = prevlayer;
-        prevlayer.visibility = false;
-        if(window.pauseAnimation && remove_old_markers){
-          prevlayer.setOpacity(0.0);
-        }
-
-      }
-    } else if(i == 2){
-      if(shouldRemoveLayers(numlayers) || remove_old_markers){
+  cleanupSeaIce(remove_old_markers);
+  if(remove_old_markers){
+    for(i=numlayers;i>=numbaselayers;i--){
+      killLayer(all_layers[i])
+    }
+  } else{
+    for(i=numlayers-1;i>=numbaselayers;i--){
+      if((i == numbaselayers && shouldRemoveLayers(numlayers))){
+        //remove the bottom most layer, should be the oldest
         killLayer(all_layers[i])
-      }  
-    } else {
-      if(remove_old_markers){
-        killLayer(all_layers[i])
-      } else if(i > 2){
-        opacity = i*0.05;
-        all_layers[i].setOpacity(opacity);        
+      } else {
+        //scale opacity based on number of layers
+        opacityAdjuster = 1/numlayers;
+        
+        if(i == numlayers-1){
+          opacity = 1.0;
+        } else {
+          opacity = i*opacityAdjuster;
+        } 
+        all_layers[i].setOpacity(opacity);
       }
-    } 
-    window.theMap.addLayer(currLayer);
+    }    
   }
+
+  window.theMap.addLayer(currLayer);
   updateDate(newurl);
+  
+  oldSeaIceLayer = window.theMap.getLayer("oldseaice");
+  if(oldSeaIceLayer){
+    killLayer(oldSeaIceLayer);
+  } 
 }
+
 
 function killLayer(lyr){
   window.theMap.removeLayer(lyr);   
   lyr.destroy(); 
 }
 
-function cleanupSeaice(layer){
-  if(layer != null){
-    layer.visibility = false;
-    window.theMap.removeLayer(layer);
-    layer.destroy();    
-  } 
-}
+function cleanupSeaIce(remove_old_markers){
+    currdate = parseCurrentDate();
 
+    if((currdate.hour == 0 && currdate.minute == 0) || remove_old_markers){
+      prevlayer = all_layers[i]
+      seaiceurl = getSeaiceURLForCurrentDate();
+      seaiceLayer = new OpenLayers.Layer.Image(
+          'SeaIce',
+          seaiceurl,
+          window.mapExtent,
+          new OpenLayers.Size(353, 341),
+          { isBaseLayer: false,
+            opacity: 1.0,
+            displayOutsideMaxExtent: false
+          }
+      );
+
+      oldSeaIceLayer = window.theMap.getLayer("seaice");
+      if(oldSeaIceLayer){
+          oldSeaIceLayer.id = "oldseaice"
+      }
+      seaiceLayer.id = "seaice";
+      
+      window.theMap.addLayer(seaiceLayer);
+      window.theMap.setLayerIndex(seaiceLayer, 1)
+      window.theMap.setLayerIndex(oldSeaIceLayer, 2);
+
+      if(oldSeaIceLayer){
+        oldSeaIceLayer.setOpacity(0.2);
+      }
+    }
+}
+function numMaxLayers(){
+  return 22
+}
 function shouldRemoveLayers(numlayers){
-   return numlayers > 14;
+   return numlayers > numMaxLayers();
 }
 
 function getMinute(minchunk){
@@ -435,11 +488,10 @@ function build_geojson_url_from_date(){
   if(window.theMap){
     bounds = window.theMap.getExtent();
   }
-  return "http://128.111.84.75:3000/time/"+window.currentDate+"/"+shippingval+"/"+flagval;
+  return "http://localhost:3000/time/"+window.currentDate+"/"+shippingval+"/"+flagval;
 }
 
 function getFlagValue(){
-  console.log("selected flag values: ",window.flagStates.toString());
   return window.flagStates.toString();
 }
 

@@ -1,4 +1,10 @@
 
+
+div.olControlNavToolbar{
+  left:40px;
+  top:4px;
+  padding:1px;
+}
 body {
   padding: 50px;
   font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
@@ -7,7 +13,6 @@ body {
 a {
   color: #00B7FF;
 }
-
 
 div.map {
   float:left;
@@ -19,7 +24,6 @@ div.map {
 }
 
 div.colorswatch{
-
   border-style:solid;
   border-width:1px;
   opacity:1.0;width:16px;
@@ -29,60 +33,72 @@ div.colorswatch{
 
 }
 div.legend-text{
+  vertical-align:middle;
+  display:inline-block;
   margin-left:25px;
   width:250px;
-  vertical-align:middle;
 }
 
-div.legend-backing{
+div.mapcontrols{
   background:white;
   box-shadow: 0 1px 7px rgba(0,0,0,.65);
   border-radius: 4px;
-  opacity:0.9;
-  position:absolute;
-  left:72%;
-  z-index:1000;
-  width:350px;
-  height:600px;
+  opacity:1.0;
+  width:320px;
   top:5px;
+  left:5px;
+  display:block;
+  height:50px;
+  z-index:1000;
+  position:absolute;
 }
 
 div.legend{
+  background:white;
+  box-shadow: 0 1px 7px rgba(0,0,0,.65);
+  border-radius: 4px;
   opacity:1.0;
-  position:absolute;
-  left:74%;
   z-index:1001;
-  top:70px;
+  top:10px;
+  left:5px;
+  margin-right:10px;
   text-color:black;
+  min-width:320px;
+  width:320px;
+  padding-left:15px;
+  padding-top:10px;
+  position:absolute;
+  left:70%;
 }
+.legend-title{
 
+  text-color:black;
+  display:inline-block;
+
+}
 .h2{
   color:white;
   position:absolute;
   left:50px;
   top:150px;
 }
-
-div.timepanel{
-  position:absolute;
-  left:74%;
-  top:560px;
-  z-index:2000;
-  background:white;
-  box-shadow: 0 1px 7px rgba(0,0,0,.65);
-  border-radius: 4px;
-  opacity: .9;
+.categories{
   width:300px;
-  height:75px;
-  padding:10px;
+}
+.ship-categories{
+  display:block;
+  margin-top:10px;
 }
 
 .datelabel{
   width:300px;
   font-size:24px;
   margin-bottom:15px;
+  display:inline-block;
 }
-
+.timepanel{
+  margin-top:35px;
+}
 .timediv{
   left:50px;
   top:315px;
@@ -93,7 +109,7 @@ div.timepanel{
   width:220px;
   display:inline-block;
   margin-left:8px;
-  margin-top:10px;
+  margin-top:2px;
 }
 .pause-button{
   margin-top:5px;
@@ -122,14 +138,7 @@ div.timepanel{
 .buttons{
 }
 
-.legend-title{
-  opacity:1.0;
-  position:absolute;
-  left:74%;
-  z-index:1001;
-  top:10px;
-  text-color:black;
-}
+
 
 .page-title {
   font-size: 22px;
@@ -148,13 +157,14 @@ div.timepanel{
 
 .flagstate_container{
   width:85%;
-  margin-top:15px;
+  margin-top:25px;
   margin-bottom:10px;
   display:inline-block;
   z-index:2001;
 }
 
 .flagstate{
-  width:85%;
+  width:250px;
+  display:inline-block; 
 }
 
