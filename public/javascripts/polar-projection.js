@@ -8,7 +8,7 @@ window.typeRules;
 window.mapExtent;
 window.prevSeaiceLayer = null;
 
-window.currentDate = 552;
+window.currentDate = 432;
 window.startDate = 0;
 //window.endDate = 2952;
 window.endDate = 17712;
@@ -50,17 +50,7 @@ function init(){
     window.pauseAnimation = false;
     updatePauseText();
   });
-  /*
-  $( "#bering-zoomin-button" ).click(function(){
-    window.bering = !window.bering;
-    goToBering();
-  });
 
-  $( "#bering-zoomout-button" ).click(function(){
-    window.bering = !window.bering;
-    goToBering();
-  });
-  */
   $( "#flagstate-filter" ).click(function(){
     updateLayers(true);
   });
@@ -82,7 +72,6 @@ function init(){
     animationEnabled:true,
     isBaseLayer:true,
     transitionEffect: 'resize',
-    attribution: 'Best Data Layers provided by <a href="http://www.gina.alaska.edu">GINA</a>',
    }
   );
   ginaLayer.id = "gina";
@@ -130,14 +119,20 @@ function init(){
   });
 
   theMap.addLayer(geojson_layer);
-
-  theMap.setCenter(new OpenLayers.LonLat(-172087,-1234069),3);
+  //89687.263964845 N, 2590151.0708066 E
+  //-326515.74204492 N, 3468251.4160566 E
+  theMap.setCenter(new OpenLayers.LonLat(1531154.749788,  -485366.49372071),3);
   var panel = new OpenLayers.Control.CustomNavToolbar();
   theMap.addControl(panel);
 
   window.animateTimer = window.setInterval(incrementDate, window.animationTime);
 
   setupFlagText();
+
+
+  var click = new OpenLayers.Control.Click();
+  theMap.addControl(click);
+  click.activate();
 }
 
 
@@ -478,8 +473,15 @@ function getMinute(minchunk){
 
 function updateDate(url){
   var dt = parseCurrentDate();
-  newtime = "Date: "+dt.month+"/"+dt.day+"/"+dt.year+", "+dt.hour+":00";
+  monthtext = getMonthText(dt.month);
+  newtime = monthtext+" "+dt.day+", "+dt.year+", "+dt.hour+":00";
   $("#datelabel").text(newtime);
+}
+function getMonthText(month){
+  var monthNames = ["Jan.", "Feb.", "March", "April", "May", "June",
+    "July", "Aug.", "Sept.", "Oct.", "Nov.", "Dec."
+  ];
+  return monthNames[month-1];
 }
 
 function build_geojson_url_from_date(){
@@ -583,8 +585,9 @@ function setupFlagText(){
     var fs = FlagStates.flagStates;
     var ddparent = $("#timepanel");
     $("#flagstate").select2({
-      placeholder: 'Filter by Flag State',
       data: fs,
+      allowClear:true,
+      placeholder: 'Enter a Country Name',
       multiple:true
     });
 

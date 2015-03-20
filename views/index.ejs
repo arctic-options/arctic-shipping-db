@@ -2,45 +2,25 @@
 <html>
   <head><% include partials/template/head.ejs %></head>
   <body style="padding:0px;margin:0px;width:100%;height:1000px;background-color:black;" onload="init()">
-    <!--
-    <div id="timepanel" class="timepanel">
-    	
-	 	<span id="datelabel" class="datelabel">
-	 		Date: 7/3/2014, 0:00
-	 	</span>
-	 	
-	 	<div>
-		 	<span class="timeslider" id="time-slider"></span>
-		 	<span class="buttons">
-		 		<button title="Pause Animation" id="pause-button" class="pause-button" type="button">
-		 			<i class="fa fa-pause"></i>
-		 		</button>
-		 		<button title="Play Animation" id="play-button" class="play-button" type="button">
-		 			<i class="fa fa-play"></i>
-		 		</button>
-
-		 		<button title = "Zoom to Bering Region" id="bering-zoomin-button" class="bering-zoomin-button" type="button">
-		 			<i class="fa fa-search-plus"></i>
-		 		</button>
-		 		<button title = "Show Polar Region" id="bering-zoomout-button" class="bering-zoomout-button" type="button">
-		 			<i class="fa fa-search-minus"></i>
-		 		</button>
-		 	</span>
-
-	 	</div>
-	 </div>
-	-->
  	<div class="legend">
+ 		
+ 		
  		<div class="legend-title">
-			<span class="page-title">Arctic Options</span>
-			<span class="page-subtitle">Sea Ice and Shipping Visualization</span>
+ 			<div style="display:inline-block;">
+ 				<a href="." id="logo"><img class="logo" src="images/ArcticOptionsLogo.png"/></a>
+ 			</div>
+ 			<div class="legend-text-title">
+				<div class="page-title">Arctic Options</div>
+				<div class="page-subtitle">Arctic Sea Ice and Shipping</div>
+			</div>
 		</div>
 
 	 	<div class="timepanel">
-	 		<span id="datelabel" class="datelabel">
-	 			Date: 7/3/2014, 0:00
+	 		<span id="datepanel" class="datepanel">
+	 			<strong>Showing data for <span class="datelabel" id="datelabel">July 4, 2014, 0:00<span></strong>
 	 		</span>
 		 	<span class="timeslider" id="time-slider"></span>
+
 		 	<span class="buttons">
 		 		<!-- <i class="fa fa-pause"></i> -->
 		 		<button title="Pause Animation" id="pause-button" class="pause-button" type="button">
@@ -49,12 +29,15 @@
 		 		<button title="Play Animation" id="play-button" class="play-button" type="button">
 		 			<i class="fa fa-play"></i>
 		 		</button>
+		 	</span></br>
+		 	<span class="timeslider-label-panel">
+		 		<label class="timeslider-label-left">July 1, 2014</label>
+		 		<label class="timeslider-label-right">October 31, 2014</label>
 		 	</span>
-
 	 	</div>
 	 	<div id="flagstate_container" class="flagstate_container">
-	 		<label for="flagstate">Filter by Flag State:</label></br>
-	 		<select id="flagstate" class="flagstate"></select>
+	 		<label for="flagstate"><strong>Filter by Flag State</strong></label></br>
+	 		<div class="flagstate-sel-container"><select id="flagstate" class="flagstate"></select></div>
 	 		<!--
 			<button title = "Filter" id="flagstate-filter" class="flagstate-filter" type="button">
 	 			<i class="fa fa-filter"></i>
@@ -62,16 +45,20 @@
 	 		-->
 		</div>
 		<div class="ship-categories">
-	 		<span>Filter by Ship Type:</span></br>
+	 		<span><strong>Filter by Ship Type</strong></span></br>
 		 		<select id="shipping_types" class="shipping_types">
 		 			<option value=100 selected>All</option>
 		 		</select>
 	 		</span>
+	 		<span style="display:block;margin-top:15px;"><strong>Key</strong></span>
 	 		<div class="categories"></div>
+	 		<div class="credits">
+	 			Credits
+	 			<span>Imagery from <a href="http://www.gina.alaska.edu/" target="_blank">GINA</a></span>
+	 			<span>Sea ice data from <a href="http://nsidc.org/data/masie/" target="_blank">MASIE</a></span>
+	 			<span>AIS Shipping Data courtesy of <a href="http://www.spacequest.com/" target="_blank">SpaceQuest</a></span>
+	 		</div>
  		</div>
- 		
-
-
 
  	</div>
  	

@@ -138,7 +138,6 @@ router.get('/time/:currdate/:shiptype/:flagstates', function(req, res, next) {
 
     //ST_AsGeoJSON(geom) as geometry
     var sql = 'SELECT row_to_json(shipping2) as properties, ST_AsGeoJSON(geom,4,2) as geometry from shipping2 WHERE '+typeclause+flagclause+' datetime >= \''+start_date+'\' AND datetime < \''+end_date+'\';';
-    console.log("sql:", sql);
     sequelize.query(sql, arctic).then(function(result){
       results = result[0];
       for (i = 0; i < results.length; i++)

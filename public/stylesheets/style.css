@@ -14,6 +14,26 @@ a {
   color: #00B7FF;
 }
 
+.logo{
+  padding-top:10px;
+  width:75px;
+  height:47px;
+  display:inline-block;
+}
+.legend-title{
+  display:block;
+  height:47px;
+  max-height:60px;
+}
+.legend-text-title{
+  display:inline-block;
+  width:220px;
+  height:47px;
+  vertical-align:top;
+  margin-top:12px;
+  margin-left:5px;
+}
+
 div.map {
   float:left;
   width:100%;
@@ -28,29 +48,30 @@ div.colorswatch{
   border-width:1px;
   opacity:1.0;width:16px;
   height:16px;
-  margin-top:4px;
-  margin-bottom:5px;
+  margin-top:5px;
+  margin-left:5px;
 
 }
 div.legend-text{
-  vertical-align:middle;
+  vertical-align:top;
   display:inline-block;
   margin-left:25px;
   width:250px;
+  margin-bottom:2px;
 }
 
-div.mapcontrols{
-  background:white;
-  box-shadow: 0 1px 7px rgba(0,0,0,.65);
-  border-radius: 4px;
-  opacity:1.0;
-  width:320px;
-  top:5px;
-  left:5px;
-  display:block;
-  height:50px;
-  z-index:1000;
-  position:absolute;
+.page-title {
+  font-size: 20px;
+  font-family: "Dolce Vita";
+  display:inline-block;
+  margin:0px;
+}
+
+.page-subtitle {
+  font-size: 14px;
+  display:inline-block;
+  font-style:italic;
+
 }
 
 div.legend{
@@ -63,96 +84,85 @@ div.legend{
   left:5px;
   margin-right:10px;
   text-color:black;
-  min-width:320px;
+  min-width:300px;
+  min-height:350px;
   width:320px;
   padding-left:15px;
   padding-top:10px;
   position:absolute;
   left:70%;
 }
-.legend-title{
 
-  text-color:black;
-  display:inline-block;
 
-}
-.h2{
-  color:white;
-  position:absolute;
-  left:50px;
-  top:150px;
-}
 .categories{
   width:300px;
 }
+
 .ship-categories{
   display:block;
   margin-top:10px;
+  margin-bottom:25px;
 }
 
-.datelabel{
-  width:300px;
-  font-size:24px;
-  margin-bottom:15px;
-  display:inline-block;
-}
-.timepanel{
-  margin-top:35px;
-}
-.timediv{
-  left:50px;
-  top:315px;
-}
-
-.timeslider{
-  vertical-align:middle;
-  width:220px;
-  display:inline-block;
-  margin-left:8px;
+.shipping_types{
+  width:252px;
+  margin-left:5px;
   margin-top:2px;
 }
+
 .pause-button{
   margin-top:5px;
+  margin-bottom:4px;
   vertical-align:middle;
   display:inline;
 }
 
 .play-button{
   margin-top:5px;
+  margin-bottom:4px;
   vertical-align:middle;
   display:none;
 }
 
-.bering-zoomin-button{
-  margin-top:5px;
-  vertical-align:middle;
-  display:inline;
+
+.timepanel{
+  margin-top:35px;
 }
 
-.bering-zoomout-button{
-  margin-top:5px;
-  vertical-align:middle;
-  display:none;
-}
-
-.buttons{
-}
-
-
-
-.page-title {
-  font-size: 22px;
-  font-family: "Dolce Vita";
+.datepanel{
+  margin-bottom:5px;
   display:block;
-  font-weight:300;
-  margin:0px;
+}
+.datelabel{
+  display:inline-block;
 }
 
-.page-subtitle {
-  font-size: 14px;
-  font-weight: 300;
-  display:block;
-  font-style:italic;
+.timeslider{
+  vertical-align:middle;
+  width:250px;
+  display:inline-block;
+  margin-left:5px;
+  margin-top:2px;
+}
+
+.timeslider-label-panel{
+  width:250px;
+  display:inline-block;
+  margin-left:5px;
+
+}
+
+.timeslider-label-left{
+  text-align:left;
+  font-size:8px;
+  color:darkgray;
+  vertical-align:top;
+}
+.timeslider-label-right{
+  float:right;
+  font-size:8px;
+  color:darkgray;
+  vertical-align:top;
 }
 
 .flagstate_container{
@@ -167,4 +177,20 @@ div.legend{
   width:250px;
   display:inline-block; 
 }
+.flagstate-sel-container{
+  margin-left:5px;
+  margin-top:2px;
+  width:250px;
+}
+.credits{
+  font-style:italic;
+  font-size:10px;
+  color:gray;
+  margin-top:10px;
+  margin-left:5px;
+}
 
+.credits span{
+  display:block;
+  margin-left:5px;
+}
