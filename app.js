@@ -6,14 +6,13 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var cors = require('cors');
-
+var http = require('http');
 var app = express();
 
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
-
 //sequelize setup
 var sequelize = new Sequelize('arctic', 'dan_yocum', 'fitzBot1', {
   host: 'localhost',
@@ -185,27 +184,29 @@ function parseFlagStates(flagstates){
 
 function loadTypeClause(shiptype){
   typeclause = ""
-  if(shiptype == "All"){
+  if(shiptype == "None"){
     return typeclause;
   }
   try{
-    cats = getShipTypeCategories();
+    shiptype_keys = shiptype.split(',');
+    var subcats = [];
+    for(var i=0;i<shiptype_keys.length;i++){
+      shiptype = shiptype_keys[i];
+      subcats_for_shiptype = getShipTypeSubcategories(shiptype);
 
-    for(cat in cats){
-      
-      if(cat == shiptype){
-        subcats = cats[cat];
-        for (var i=0;i<subcats.length;i++){
-          if(i == 0){
-            typeclause+="( ";
-          }
-          if(i == subcats.length - 1){
-            typeclause+=" type = \'"+subcats[i]+"\') AND ";
-          } else {
-            typeclause+= "type = \'"+subcats[i]+"\' OR ";
-          }
-        }
-        return typeclause;
+      for(var j=0;j<subcats_for_shiptype.length;j++){
+        subcats.push(subcats_for_shiptype[j]);
+      }
+    }
+
+    for (var i=0;i<subcats.length;i++){
+      if(i == 0){
+        typeclause+="( ";
+      }
+      if(i == subcats.length - 1){
+        typeclause+=" type = \'"+subcats[i]+"\') AND ";
+      } else {
+        typeclause+= "type = \'"+subcats[i]+"\' OR ";
       }
     }
   } catch(err){
@@ -213,6 +214,11 @@ function loadTypeClause(shiptype){
   }
 
   return typeclause;
+}
+function getShipTypeSubcategories(shiptype){
+  var cats = getShipTypeCategories();
+  var subcats = cats[shiptype];
+  return subcats;
 }
 
 function getMinute(minute){

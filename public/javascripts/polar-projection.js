@@ -1,3 +1,7 @@
+
+
+window.urlPrefix = "http://hardison.nceas.ucsb.edu"
+
 window.currLayer = null;
 window.animationTime = 100;
 window.theMap = null;
@@ -15,8 +19,10 @@ window.endDate = 17712;
 window.pauseAnimation=false;
 window.draggingPause = false;
 window.bering = false;
+
 window.flagStates = ["All"];
 window.categories = null;
+window.shiptypes = null;
 
 //(-5955554.0585227,-4707645.05374313,5619445.9414773,4567354.94625687)
 //(-9036842.762,-9036842.762, 9036842.762, 9036842.762)
@@ -82,6 +88,8 @@ function init(){
   });
   
   window.styleMap = new OpenLayers.StyleMap({'default':point_style});
+  window.styleMap.styles['default'].rules = tr;
+
   gj_url = getJSONURLForCurrentDate();
   //gj_url = "data/test.json"
   geojson_layer = new OpenLayers.Layer.Vector("GeoJSON",{
@@ -119,8 +127,7 @@ function init(){
   });
 
   theMap.addLayer(geojson_layer);
-  //89687.263964845 N, 2590151.0708066 E
-  //-326515.74204492 N, 3468251.4160566 E
+
   theMap.setCenter(new OpenLayers.LonLat(1531154.749788,  -485366.49372071),3);
   var panel = new OpenLayers.Control.CustomNavToolbar();
   theMap.addControl(panel);
@@ -129,10 +136,12 @@ function init(){
 
   setupFlagText();
 
-
+  /*
+  reactivate this to find out where points are located
   var click = new OpenLayers.Control.Click();
   theMap.addControl(click);
   click.activate();
+  */
 }
 
 
@@ -238,117 +247,60 @@ function parseCurrentDate(){
   return vals;
 }
 
-
-function loadShipCategories(){
-  var typeRules = new Array();
-  
-  $.getJSON( "data/new_ship_categories.json", function( data ) {
-      var x=0
-      categories = [];
-
-      $.each( data, function( key, value ) {
-          categories.push(key);
-          type_filters = [];
-          for(stype in value){
-            newfilter = new OpenLayers.Filter.Comparison({
-                          type: OpenLayers.Filter.Comparison.EQUAL_TO,
-                          property: "type", 
-                          value: value[stype]
-                        });
-            type_filters.push(newfilter);
-          }
-
-          logic_filter =  new OpenLayers.Filter.Logical({
-                              type: OpenLayers.Filter.Logical.OR,
-                              filters: type_filters
-                          });
-
-          rule = new OpenLayers.Rule({
-                filter: logic_filter,
-                symbolizer: {
-                  fillColor:nav_colors[key],
-                  fillOpacity:1.0,
-                  strokeWidth:1.0,
-                  strokeColor:nav_colors[key],
-                  strokeOpacity:0.1,
-                  pointRadius:2,
-                }
-          });
-          typeRules.push(rule);
-          x+=1
-      });
-
-      categories.sort();
-      window.categories = categories;
-    
-      for(i in categories){
-        cat = categories[i];
-        var selval = i;
-        optionval = '<option value='+selval+'>'+cat+'</option>';
-        $('.shipping_types').append(optionval)
-      }
-      sts = window.styleMap.styles['default'];
-      if(sts != null){
-        sts.rules = [typeRules[4]];
-      }
-
-      $(".shipping_types").change(function(){
-        var val = getShippingType();
-        setNewRuleFilters(val);
-        updateLayers(true);
-        buildLegend();
-      });
-      window.typeRules = typeRules;
-      $('.shipping_types option[value=4]').prop('selected', true);
-      buildLegend();
-    });
-
-  return typeRules;
-}
 function buildLegend(){
-
-  var cat = getShippingType();
-  console.log(cat);
-  
+  var shipping_cats = getShippingTextValues();
   $('.categories').empty();
-  if(cat == 100){
-
-    console.log("all");
-    for(i in window.categories){
-      var category = window.categories[i];
+  if(shipping_cats.length == 0){
+    var shipping_cats = window.categories;
+    for(cat in shipping_cats){
+      var category = shipping_cats[cat];
       colordiv = '<div class="colorswatch" style="background-color:'+nav_colors[category]+'"><div class="legend-text">'+category+'</div></div>';
       $('.categories').append(colordiv);
     }
   } else {
-    var category = window.categories[cat];
-    colordiv = '<div class="colorswatch" style="background-color:'+nav_colors[category]+'"><div class="legend-text">'+category+'</div></div>';
-    $('.categories').append(colordiv);
+    for(cat in shipping_cats){
+      var category = shipping_cats[cat];
+      colordiv = '<div class="colorswatch" style="background-color:'+nav_colors[category]+'"><div class="legend-text">'+category+'</div></div>';
+      $('.categories').append(colordiv);
+    }    
   }
+
+  
   seaicediv = '<div class="colorswatch" style="background-color:white"><div class="legend-text">Sea Ice</div></div>';
    $('.categories').append(seaicediv);
 }
 
-function getShippingType(){
-  return $( "#shipping_types option:selected").val();
+
+function getShippingTextValues(){
+  var selectedKeys = $("#shipping_types").val();
+  if(selectedKeys == null){
+    return [];
+  }
+  var stvals = [];
+  for(var i=0;i<selectedKeys.length;i++){
+    var key = parseInt(selectedKeys[i]);
+    
+    var val = getShipTypeForId(key);
+    stvals.push(val);
+  }
+  return stvals;   
 }
-function getShippingValue(){
-  return $( "#shipping_types option:selected").text();
+
+function getShipTypeForId(id){
+  var shiptypes = window.shiptypes;
+  for(var i=0;i<shiptypes.length;i++){
+    if(shiptypes[i].id == id){
+      return shiptypes[i].text;
+    }
+  }
 }
 
 
-function setNewRuleFilters(val){
+function loadAllRuleFilters(typeRules){
   sts = window.styleMap.styles['default'];
-  var newrules = null;
-  if(val == 100){
-    newrules = window.typeRules;
-  } else {
-    newrules = [window.typeRules[val]];
-  }
-  sts = window.styleMap.styles['default'];
-  if(sts != null){
-    sts.rules = newrules;
-  }
+  sts.rules = typeRules;
 }
+
 
 function getNumBaseLayers(){
   var ginalayer = window.theMap.getLayer("gina");
@@ -390,7 +342,7 @@ function updateLayers(remove_old_markers){
     for(i=numlayers;i>=numbaselayers;i--){
       killLayer(all_layers[i])
     }
-  } else{
+  } else {
     for(i=numlayers-1;i>=numbaselayers;i--){
       if((i == numbaselayers && shouldRemoveLayers(numlayers))){
         //remove the bottom most layer, should be the oldest
@@ -414,10 +366,9 @@ function updateLayers(remove_old_markers){
   
   oldSeaIceLayer = window.theMap.getLayer("oldseaice");
   if(oldSeaIceLayer){
-    killLayer(oldSeaIceLayer);
+    //killLayer(oldSeaIceLayer);
   } 
 }
-
 
 function killLayer(lyr){
   window.theMap.removeLayer(lyr);   
@@ -457,7 +408,7 @@ function cleanupSeaIce(remove_old_markers){
     }
 }
 function numMaxLayers(){
-  return 22
+  return 22;
 }
 function shouldRemoveLayers(numlayers){
    return numlayers > numMaxLayers();
@@ -485,15 +436,17 @@ function getMonthText(month){
 }
 
 function build_geojson_url_from_date(){
-  shippingval = getShippingValue();
-  flagval = getFlagValue();
-  if(window.theMap){
-    bounds = window.theMap.getExtent();
+  shippingval = getShippingTextValues();
+  if(shippingval == null || shippingval.length == 0){
+    shippingval = "None";
   }
-  return "http://hardison.nceas.ucsb.edu:3000/time/"+window.currentDate+"/"+shippingval+"/"+flagval;
+  flagval = getSelectedFlagValue();
+  var url = window.urlPrefix+"/time/"+window.currentDate+"/"+shippingval+"/"+flagval;
+  return url;
 }
 
-function getFlagValue(){
+
+function getSelectedFlagValue(){
   return window.flagStates.toString();
 }
 
@@ -536,8 +489,7 @@ nav_colors = {
     "Unknown": "beige", 
     "Working & Support": "LightGreen"
 }
-
-
+/*
 OpenLayers.Control.Click = OpenLayers.Class(OpenLayers.Control, {                
     defaultHandlerOptions: {
         'single': true,
@@ -565,6 +517,7 @@ OpenLayers.Control.Click = OpenLayers.Class(OpenLayers.Control, {
                                   + lonlat.lon + " E");
     }
 });
+*/
 
 function getFlagTextForId(flagstates, id){
   for(var i=0;i<flagstates.length;i++){
@@ -578,6 +531,78 @@ function getFlagTextForId(flagstates, id){
     }
   }
   return "";
+}
+
+function loadShipCategories(){
+  var typeRules = new Array();
+  var shipCategories = getAllShipCategories();
+  var categories = new Array();
+  $.each( shipCategories, function( key, value ) {
+    categories.push(key);
+    type_filters = [];
+    for(stype in value){
+      newfilter = new OpenLayers.Filter.Comparison({
+                    type: OpenLayers.Filter.Comparison.EQUAL_TO,
+                    property: "type", 
+                    value: value[stype]
+                  });
+      type_filters.push(newfilter);
+    }
+
+    logic_filter =  new OpenLayers.Filter.Logical({
+                        type: OpenLayers.Filter.Logical.OR,
+                        filters: type_filters
+                    });
+
+    rule = new OpenLayers.Rule({
+          filter: logic_filter,
+          symbolizer: {
+            fillColor:nav_colors[key],
+            fillOpacity:1.0,
+            strokeWidth:1.0,
+            strokeColor:nav_colors[key],
+            strokeOpacity:0.1,
+            pointRadius:2,
+          }
+    });
+    typeRules.push(rule);
+  });
+
+  categories.sort();
+  var shiptypes = [{id:0, text:"Cargo and Tanker"}, 
+                  {id:1, text:"Diving"}, 
+                  {id:2, text:"Dredging"}, 
+                  {id:3, text: "Enforcement and Safety"}, 
+                  {id:4, text:"Fishing"}, 
+                  {id:5, text:"Icebreaker"}, 
+                  {id:6, text:"Military"}, 
+                  {id:7, text:"Other"}, 
+                  {id:8, text:"Passenger & Cruise Ships"}, 
+                  {id:9, text:"Research"}, 
+                  {id:10, text:"Sailing"},
+                  {id:11, text:"Tug"}, 
+                  {id:12, text:"Unknown"}, 
+                  {id:13, text:"Working & Support"}];
+
+  window.shiptypes = shiptypes;
+  window.categories = categories;
+  $("#shipping_types").select2({
+    data: shiptypes,
+    allowClear:false,
+    placeholder: 'Enter a Ship Type',
+    multiple:true
+  });
+
+  $(".shipping_types").val("4");
+  $(".shipping_types").change(function(){
+    //setNewRuleFilters();
+    updateLayers(true);
+    buildLegend();
+  });
+
+
+  buildLegend();
+  return typeRules;
 }
 
 function setupFlagText(){
@@ -610,4 +635,61 @@ function setupFlagText(){
   } catch(err){
 
   }
+}
+
+function getAllShipCategories(){
+  return {
+      "Cargo and Tanker": [
+        "Cargo ship",
+        "Tanker"
+      ], 
+      "Diving": [
+        "Dive boat"
+      ], 
+      "Dredging": [
+        "Dredging"
+      ], 
+      "Enforcement and Safety": [
+        "Law enforcement vessel",
+        "Search and rescue",
+        "Medical transport"
+      ], 
+      "Fishing": [
+        "Fishing"
+      ], 
+      "Icebreaker": [
+        "Icebreaker"
+      ], 
+      "Military": [
+        "Military"
+      ], 
+      "Other": [
+        "Local vessel",
+        "Wing in ground",
+      "High speed craft",
+      "Ships and aircraft of States not parties to an armed conflict"
+      ], 
+      "Passenger & Cruise Ships": [
+        "Pleasure craft"
+      ], 
+      "Research": [
+        "Research",
+        "Research Vessel"
+      ], 
+      "Sailing": [
+        "Sailing"
+      ], 
+      "Tug": [
+        "Tug"
+      ], 
+      "Unknown": [
+        "Unknown"
+      ], 
+      "Working & Support": [
+        "Pilot vessel",
+        "Port tender",
+        "Anti-pollution vessel",
+        "Towing" 
+      ]
+  };
 }
