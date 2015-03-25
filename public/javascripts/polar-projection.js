@@ -10,7 +10,6 @@ window.destProj = new OpenLayers.Projection("EPSG:3572");
 
 window.typeRules;
 window.mapExtent;
-window.prevSeaiceLayer = null;
 
 window.currentDate = 432;
 window.startDate = 0;
@@ -23,6 +22,8 @@ window.bering = false;
 window.flagStates = ["All"];
 window.categories = null;
 window.shiptypes = null;
+window.prevSeaIce = null;
+window.currSeaIce = null;
 
 //(-5955554.0585227,-4707645.05374313,5619445.9414773,4567354.94625687)
 //(-9036842.762,-9036842.762, 9036842.762, 9036842.762)
@@ -37,6 +38,7 @@ function init(){
     max:endDate,
     
   });
+
   slider.on("slidestop", function(event, ui) {
     window.draggingPause = false;
     changeSliderValue(ui.value);
@@ -92,7 +94,7 @@ function init(){
 
   gj_url = getJSONURLForCurrentDate();
   //gj_url = "data/test.json"
-  geojson_layer = new OpenLayers.Layer.Vector("GeoJSON",{
+  geojson_layer = new OpenLayers.Layer.Vector("markers",{
     strategies: [new OpenLayers.Strategy.Fixed()],
     styleMap: window.styleMap,  
     projection: destProj,
@@ -105,18 +107,20 @@ function init(){
   window.currLayer = geojson_layer;
 
   var imgStat = 'http://nsidc.org/cgi-bin/atlas_north?service=WMS&version =1.1.1&request =GetMap&srs=EPSG:3572&transparent=true&format=image/png&width=1000&height=1000&bbox=-9036842.762,-9036842.762, 9036842.762, 9036842.762&layers=sea_ice_extent_01'
-  seaiceURL = getSeaiceURLForCurrentDate()
+  seaiceURL = getSeaiceURLForCurrentDate();
+  seaiceID = 'seaice'+window.currentDate;
+  window.currSeaIce = seaiceID;
   layer = new OpenLayers.Layer.Image(
-      'Seaice',
+      seaiceID,
       seaiceURL,
       extent,
       new OpenLayers.Size(353, 341),
       { isBaseLayer: false,
         opacity: 1.0,
-        displayOutsideMaxExtent: false
+        displayOutsideMaxExtent: false,
       }
   );
-  layer.id = "seaice";
+  
   var zoom = new OpenLayers.Control.Zoom(new OpenLayers.Pixel(10,850));
 
   theMap = new OpenLayers.Map('map', {
@@ -133,7 +137,6 @@ function init(){
   theMap.addControl(panel);
 
   window.animateTimer = window.setInterval(incrementDate, window.animationTime);
-
   setupFlagText();
 
   /*
@@ -144,7 +147,19 @@ function init(){
   */
 }
 
-
+function getSeaIceLayer(which_layer){
+  if(which_layer == null){
+    return null;
+  } else {
+    var lyrs = window.theMap.getLayersByName(which_layer); 
+    if(lyrs != null){
+      return lyrs[0]
+    } else {
+      return null
+    }
+  }
+  
+}
 function goToBering(){
   if(window.bering){
     latlong = new OpenLayers.LonLat(-897927,-2581314);
@@ -301,30 +316,12 @@ function loadAllRuleFilters(typeRules){
   sts.rules = typeRules;
 }
 
-
-function getNumBaseLayers(){
-  var ginalayer = window.theMap.getLayer("gina");
-  var seaicelayer = window.theMap.getLayer("seaice");
-  var oldSeaIceLayer = window.theMap.getLayer("oldseaice");
-  var numbase = 0;
-  if(ginalayer){
-    numbase+=1;
-  } 
-  if(seaicelayer){
-    numbase+=1;
-  }
-  if(oldSeaIceLayer){
-    numbase+=1;
-  }
-  return numbase;
-}
-
 function updateLayers(remove_old_markers){
 
   newurl = getJSONURLForCurrentDate();
-  numbaselayers = getNumBaseLayers();
+  //numbaselayers = getNumBaseLayers();
 
-  currLayer = new OpenLayers.Layer.Vector("GeoJSON",{
+  currLayer = new OpenLayers.Layer.Vector("markers",{
     strategies: [new OpenLayers.Strategy.Fixed()],
     styleMap: window.styleMap,  
     projection: window.destProj,
@@ -335,39 +332,41 @@ function updateLayers(remove_old_markers){
     })
   });
   
-  all_layers = window.theMap.layers;
-  numlayers = window.theMap.getNumLayers();
+
   cleanupSeaIce(remove_old_markers);
-  if(remove_old_markers){
-    for(i=numlayers;i>=numbaselayers;i--){
-      killLayer(all_layers[i])
-    }
-  } else {
-    for(i=numlayers-1;i>=numbaselayers;i--){
-      if((i == numbaselayers && shouldRemoveLayers(numlayers))){
-        //remove the bottom most layer, should be the oldest
-        killLayer(all_layers[i])
-      } else {
-        //scale opacity based on number of layers
-        opacityAdjuster = 1/numlayers;
-        
-        if(i == numlayers-1){
-          opacity = 1.0;
-        } else {
-          opacity = i*opacityAdjuster;
-        } 
-        all_layers[i].setOpacity(opacity);
+  markerlayers = window.theMap.getLayersByName("markers");
+  if(markerlayers != null){
+    if(remove_old_markers){
+      for(i=0;i<markerlayers.length;i++){
+        killLayer(markerlayers[i])
       }
-    }    
+    } else {
+      numlayers = markerlayers.length
+      for(i=numlayers-1;i>=0;i--){
+        if((i == 0 && shouldRemoveLayers(numlayers))){
+          //remove the bottom most layer, should be the oldest
+          killLayer(markerlayers[i])
+        } else {
+          //scale opacity based on number of layers
+          opacityAdjuster = 1/numlayers;
+          
+          if(i == numlayers-1){
+            opacity = 1.0;
+          } else {
+            opacity = i*opacityAdjuster;
+          } 
+          markerlayers[i].setOpacity(opacity);
+        }
+      }    
+    }
   }
 
   window.theMap.addLayer(currLayer);
   updateDate(newurl);
-  
-  oldSeaIceLayer = window.theMap.getLayer("oldseaice");
-  if(oldSeaIceLayer){
-    //killLayer(oldSeaIceLayer);
-  } 
+  if(window.pauseAnimation){
+    currLayer.redraw();
+  }
+
 }
 
 function killLayer(lyr){
@@ -377,38 +376,50 @@ function killLayer(lyr){
 
 function cleanupSeaIce(remove_old_markers){
     currdate = parseCurrentDate();
+    var currSeaIceLayer = getSeaIceLayer(window.currSeaIce);
 
     if((currdate.hour == 0 && currdate.minute == 0) || remove_old_markers){
-      prevlayer = all_layers[i]
+
       seaiceurl = getSeaiceURLForCurrentDate();
+      seaiceID = "seaice"+window.currentDate;
       seaiceLayer = new OpenLayers.Layer.Image(
-          'SeaIce',
+          seaiceID,
           seaiceurl,
           window.mapExtent,
           new OpenLayers.Size(353, 341),
           { isBaseLayer: false,
             opacity: 1.0,
-            displayOutsideMaxExtent: false
+            displayOutsideMaxExtent: false,
           }
       );
-
-      oldSeaIceLayer = window.theMap.getLayer("seaice");
-      if(oldSeaIceLayer){
-          oldSeaIceLayer.id = "oldseaice"
-      }
-      seaiceLayer.id = "seaice";
-      
+      seaiceLayer.setZIndex(1);
       window.theMap.addLayer(seaiceLayer);
-      window.theMap.setLayerIndex(seaiceLayer, 1)
-      window.theMap.setLayerIndex(oldSeaIceLayer, 2);
 
-      if(oldSeaIceLayer){
-        oldSeaIceLayer.setOpacity(0.2);
+      //update the pointers to the seaice ids
+      window.prevSeaIce = window.currSeaIce;
+      window.currSeaIce = seaiceID;
+      oldseaice = getSeaIceLayer(window.prevSeaIce);
+      
+      if(window.pauseAnimation){
+        oldseaice.setOpacity(0.0);
+      }
+    } else {
+      if(window.prevSeaIce != null){
+        oldSeaIceLayer = getSeaIceLayer(window.prevSeaIce);
+        if(oldSeaIceLayer != null){
+          op = oldSeaIceLayer.opacity;
+          if(op > 0){
+            oldSeaIceLayer.setOpacity(op-0.2);
+          } else {
+            killLayer(oldSeaIceLayer);
+          }
+        }
       }
     }
 }
+
 function numMaxLayers(){
-  return 22;
+  return 20;
 }
 function shouldRemoveLayers(numlayers){
    return numlayers > numMaxLayers();
