@@ -1,20 +1,20 @@
 
 
-window.urlPrefix = "http://hardison.nceas.ucsb.edu"
+window.urlPrefix = "http://localhost:3000"
 
 window.currLayer = null;
-window.animationTime = 100;
+window.animationTime = 300;
 window.theMap = null;
 window.styleMap = null;
 window.destProj = new OpenLayers.Projection("EPSG:3572");
 
 window.typeRules;
 window.mapExtent;
-
+/*
 window.currentDate = 432;
 window.startDate = 0;
-//window.endDate = 2952;
 window.endDate = 17712;
+*/
 window.pauseAnimation=false;
 window.draggingPause = false;
 window.bering = false;
@@ -24,18 +24,19 @@ window.categories = null;
 window.shiptypes = null;
 window.prevSeaIce = null;
 window.currSeaIce = null;
-
+window.currLayer = null;
 //(-5955554.0585227,-4707645.05374313,5619445.9414773,4567354.94625687)
 //(-9036842.762,-9036842.762, 9036842.762, 9036842.762)
 //(9947619.660797345,-12487578.50853397,9962380.339202656,12502339.18693928)
 //(-4416084.91196798,-4221191.0136816, 4408915.08803202, 4303808.9863184);
 function init(){
+  window.datastore = new DataStore();
   var slider = $("#time-slider");
   slider.slider({
     animate:"fast",
-    value:window.currentDate,
-    min:startDate, 
-    max:endDate,
+    value:window.datastore.getCurrentDate(),
+    min:window.datastore.startDate, 
+    max:window.datastore.endDate,
     
   });
 
@@ -108,7 +109,7 @@ function init(){
 
   var imgStat = 'http://nsidc.org/cgi-bin/atlas_north?service=WMS&version =1.1.1&request =GetMap&srs=EPSG:3572&transparent=true&format=image/png&width=1000&height=1000&bbox=-9036842.762,-9036842.762, 9036842.762, 9036842.762&layers=sea_ice_extent_01'
   seaiceURL = getSeaiceURLForCurrentDate();
-  seaiceID = 'seaice'+window.currentDate;
+  seaiceID = 'seaice'+window.datastore.getCurrentDate();
   window.currSeaIce = seaiceID;
   layer = new OpenLayers.Layer.Image(
       seaiceID,
@@ -194,21 +195,22 @@ function isPaused(){
 }
 
 function changeSliderValue(newDate){
-  window.currentDate = newDate;
+  window.datastore.setCurrentDate(newDate);
   updateLayers(true);
 }
 
 function incrementDate(){
+
   if(isPaused()){
     return;
   }
-  newDate = window.currentDate+1;
-  if(newDate > endDate){
+  window.datastore.incrementDate();
+  newDate = window.datastore.getCurrentDate();
+  if(newDate > window.datastore.endDate){
     return;
   }
-  window.currentDate = newDate;
 
-  $( "#time-slider" ).slider( "value", window.currentDate );
+  $( "#time-slider" ).slider( "value", newDate );
   updateLayers(false);
 }
 
@@ -222,7 +224,7 @@ function getSeaiceURLForCurrentDate(){
 }
 
 function parseCurrentDate(){
-  currdate = window.currentDate;
+  currdate = window.datastore.getCurrentDate();
   var year = 2014;
   
   //note: these arent actually minutes, they're ten minute chunks
@@ -303,9 +305,11 @@ function getShippingTextValues(){
 
 function getShipTypeForId(id){
   var shiptypes = window.shiptypes;
-  for(var i=0;i<shiptypes.length;i++){
-    if(shiptypes[i].id == id){
-      return shiptypes[i].text;
+  if(shiptypes != null){
+    for(var i=0;i<shiptypes.length;i++){
+      if(shiptypes[i].id == id){
+        return shiptypes[i].text;
+      }
     }
   }
 }
@@ -319,8 +323,11 @@ function loadAllRuleFilters(typeRules){
 function updateLayers(remove_old_markers){
 
   newurl = getJSONURLForCurrentDate();
-  //numbaselayers = getNumBaseLayers();
-
+  /*
+  console.log("url is ", newurl);
+  numbaselayers = getNumBaseLayers();
+  
+  loading the markers using json
   currLayer = new OpenLayers.Layer.Vector("markers",{
     strategies: [new OpenLayers.Strategy.Fixed()],
     styleMap: window.styleMap,  
@@ -332,7 +339,16 @@ function updateLayers(remove_old_markers){
     })
   });
   
+  */
+  currLayer = new OpenLayers.Layer.Vector("markers",{
+    strategies: [new OpenLayers.Strategy.Fixed()],
+    styleMap: window.styleMap,  
+    projection: window.destProj
 
+  });
+  window.currLayer = currLayer;
+  window.datastore.addMarkersForCurrentDate();
+  
   cleanupSeaIce(remove_old_markers);
   markerlayers = window.theMap.getLayersByName("markers");
   if(markerlayers != null){
@@ -377,11 +393,10 @@ function killLayer(lyr){
 function cleanupSeaIce(remove_old_markers){
     currdate = parseCurrentDate();
     var currSeaIceLayer = getSeaIceLayer(window.currSeaIce);
-
     if((currdate.hour == 0 && currdate.minute == 0) || remove_old_markers){
 
       seaiceurl = getSeaiceURLForCurrentDate();
-      seaiceID = "seaice"+window.currentDate;
+      seaiceID = "seaice"+window.datastore.getCurrentDate();
       seaiceLayer = new OpenLayers.Layer.Image(
           seaiceID,
           seaiceurl,
@@ -402,7 +417,8 @@ function cleanupSeaIce(remove_old_markers){
       
       if(window.pauseAnimation){
         oldseaice.setOpacity(0.0);
-      }
+      } 
+      seaiceLayer.redraw();
     } else {
       if(window.prevSeaIce != null){
         oldSeaIceLayer = getSeaIceLayer(window.prevSeaIce);
@@ -419,7 +435,7 @@ function cleanupSeaIce(remove_old_markers){
 }
 
 function numMaxLayers(){
-  return 20;
+  return 10;
 }
 function shouldRemoveLayers(numlayers){
    return numlayers > numMaxLayers();
@@ -452,7 +468,8 @@ function build_geojson_url_from_date(){
     shippingval = "None";
   }
   flagval = getSelectedFlagValue();
-  var url = window.urlPrefix+"/time/"+window.currentDate+"/"+shippingval+"/"+flagval;
+  currdate = window.datastore.getCurrentDate();
+  var url = window.urlPrefix+"/time/"+currdate+"/"+shippingval+"/"+flagval;
   return url;
 }
 

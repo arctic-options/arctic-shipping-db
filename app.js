@@ -115,6 +115,7 @@ router.get('/', function(req, res, next) {
 
 router.get('/time/:currdate/:shiptype/:flagstates', function(req, res, next) {
   try{
+    console.log("time....")
     thedate = parseCurrentDate(req.params.currdate);
     flagclause = parseFlagStates(req.params.flagstates);
 
@@ -142,7 +143,48 @@ router.get('/time/:currdate/:shiptype/:flagstates', function(req, res, next) {
       results = result[0];
       for (i = 0; i < results.length; i++)
       {
-          vals = JSON.parse(results[i].geometry)
+          vals = JSON.parse(results[i].geometry);
+          feat = results[i];
+          featureCollection.features[i] = {"geometry":vals, "type":"Feature", "properties":feat.properties};
+      }
+      res.send(featureCollection);
+      res.end();
+      
+    });
+  } catch(err){
+    console.log("error searching: ",err)
+  }
+});
+
+router.get('/byday/:currdate/:shiptype/:flagstates', function(req, res, next) {
+ 
+  try{
+    console.log("currdate: ", req.params.currdate);
+    var dateobj = new Date();
+    dateobj.setTime(req.params.currdate);
+    console.log("going by day!!!!!!!", dateobj.toDateString());
+    var flagclause = parseFlagStates(req.params.flagstates);
+
+    shipping_type = req.params.shiptype;
+
+    year = dateobj.getUTCFullYear();
+    month = padValue(dateobj.getUTCMonth()+1);
+    sday = padValue(dateobj.getUTCDate()+1);
+    
+    start_date = year+"-"+month+"-"+sday+" "+"00:00:00";
+    end_date = year+"-"+month+"-"+sday+" "+"23:59:00";
+    typeclause = loadTypeClause(shipping_type);
+    
+    featureCollection = new FeatureCollection();
+
+    //ST_AsGeoJSON(geom) as geometry
+    var sql = 'SELECT row_to_json(shipping2) as properties, ST_AsGeoJSON(geom,4,2) as geometry from shipping2 WHERE '+typeclause+flagclause+' datetime >= \''+start_date+'\' AND datetime < \''+end_date+'\';';
+
+    sequelize.query(sql, arctic).then(function(result){
+      results = result[0];
+      for (i = 0; i < results.length; i++)
+      {
+          vals = JSON.parse(results[i].geometry);
           feat = results[i];
           featureCollection.features[i] = {"geometry":vals, "type":"Feature", "properties":feat.properties};
       }
@@ -238,6 +280,43 @@ function Feature(){
   this.type = 'properties';
 
 }
+
+function parseCurrentDay(currday){
+  var year = 2014;
+  
+  //note: these arent actually minutes, they're ten minute chunks
+  var mins_in_july = 4464;
+  var mins_in_august = 8928;
+  var mins_in_sept = 13248;
+  var mins_in_oct = 17712;
+  var minchunk = 24*6;
+  
+  if(currday > mins_in_july){
+    if(currday > mins_in_august){
+      if(currday > mins_in_sept){
+        //its in october
+        month = 10;
+        dayoffset = 92;
+      } else {
+        //its in september
+        month = 9;
+        dayoffset = 62;
+      }
+    } else {
+      //its in august
+      month = 8;
+      dayoffset = 31;
+    }
+  } else {
+        month = 7;
+        dayoffset = 0
+  }
+  day =  Math.floor(currday/(24*6)) - dayoffset;
+
+  var vals = {"year":year, "month":month,"day":day+1, "hour":0, "minute": 0}
+  return vals;
+}
+
 function parseCurrentDate(currdate){
 
   var year = 2014;
@@ -247,7 +326,6 @@ function parseCurrentDate(currdate){
   var mins_in_august = 8928;
   var mins_in_sept = 13248;
   var mins_in_oct = 17712;
-
   var minchunk = 24*6;
   
   if(currdate > mins_in_july){
