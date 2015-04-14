@@ -15,7 +15,7 @@
 
 	 	<div class="timepanel">
 	 		<span id="datepanel" class="datepanel">
-	 			<strong>Showing data for <span class="datelabel" id="datelabel">July 4, 2014, 0:00<span></strong>
+	 			<strong>Showing <span class="shipcount" id="shipcount">0</span> vessels for <span class="datelabel" id="datelabel">July 4, 2014, 0:00<span></strong>
 	 		</span>
 		 	<span class="timeslider" id="time-slider"></span>
 
@@ -45,6 +45,17 @@
 	 		</button>
 	 		-->
 		</div>
+		<div id="shiplength_container" class="shiplength_container">
+			<div class="filter_label">Filter by Ship Length</div>
+			<div class="sizeslider" id="shiplength"></div>
+			<span class="shiplength_min">Minimum: 50</span><span class="shiplength_max">Maximum: 250</span>
+	 	</div>
+		<div id="shipwidth_container" class="shipwidth_container">
+			<div class="filter_label">Filter by Ship Width</div>
+			<div class="sizeslider" id="shipwidth"></div>
+			<span class="shipwidth_min">Minimum: 10</span><span class="shipwidth_max">Maximum: 50</span>
+	 	</div>
+	 	
 		<div class="ship-categories">
 	 		<span><strong>Filter by Ship Type</strong></span></br>
 	 		<div class="shipping-sel-container">

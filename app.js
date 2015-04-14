@@ -113,10 +113,9 @@ router.get('/', function(req, res, next) {
   res.render('index', { title: 'Express' });
 });
 
-router.get('/time/:currdate/:shiptype/:flagstates', function(req, res, next) {
+router.get('/time/:currdate/:shiptype/:flagstates/:shipsize', function(req, res, next) {
   try{
     thedate = parseCurrentDate(req.params.currdate);
-    flagclause = parseFlagStates(req.params.flagstates);
 
     shipping_type = req.params.shiptype;
     year = thedate.year;
@@ -131,12 +130,23 @@ router.get('/time/:currdate/:shiptype/:flagstates', function(req, res, next) {
     start_date = year+"-"+month+"-"+day+" "+hour+":"+startminute+":00";
     end_date = year+"-"+month+"-"+day+" "+hour+":"+endminute+":00";
 
-    typeclause = loadTypeClause(shipping_type);
-    
+    var typeclause = parseTypeClause(shipping_type);
+    var flagclause = parseFlagStates(req.params.flagstates, shipping_type.length != 0);
+
+
+    var bothempty = (flagclause.trim().length == 0 && typeclause.trim().length == 0);
+    var sizeclause = parseSizeClause(req.params.shipsize, !bothempty);
+    console.log("sizeclause: ", sizeclause)
     featureCollection = new FeatureCollection();
 
+   
+    var clauses = typeclause+flagclause+sizeclause;
+    if(clauses.length > 0){
+      clauses+= " AND ";
+    }
+
     //ST_AsGeoJSON(geom) as geometry
-    var sql = 'SELECT row_to_json(shipping2) as properties, ST_AsGeoJSON(geom,4,2) as geometry from shipping2 WHERE '+typeclause+flagclause+' datetime >= \''+start_date+'\' AND datetime < \''+end_date+'\';';
+    var sql = 'SELECT row_to_json(shipping2) as properties, ST_AsGeoJSON(geom,4,2) as geometry from shipping2 where '+clauses+' ( datetime >= \''+start_date+'\' AND datetime < \''+end_date+'\');';
 
     sequelize.query(sql, arctic).then(function(result){
       results = result[0];
@@ -155,7 +165,7 @@ router.get('/time/:currdate/:shiptype/:flagstates', function(req, res, next) {
   }
 });
 
-function parseFlagStates(flagstates){
+function parseFlagStates(flagstates, addAnd){
   flagclause = ""
   var fs_keys = flagstates.split(',');
   
@@ -167,7 +177,7 @@ function parseFlagStates(flagstates){
       for(var i=0;i<fs_keys.length;i++){
         
         if(i == 0){
-          flagclause+= "( ";
+          flagclause+= " AND ( ";
         }
         if(i == fs_keys.length - 1){
           flagclause+=" flag LIKE \'"+fs_keys[i]+"\%') AND ";
@@ -183,8 +193,8 @@ function parseFlagStates(flagstates){
   return flagclause;
 }
 
-function loadTypeClause(shiptype){
-  typeclause = ""
+function parseTypeClause(shiptype){
+  typeclause = "";
   if(shiptype == "None"){
     return typeclause;
   }
@@ -205,7 +215,7 @@ function loadTypeClause(shiptype){
         typeclause+="( ";
       }
       if(i == subcats.length - 1){
-        typeclause+=" type = \'"+subcats[i]+"\') AND ";
+        typeclause+=" type = \'"+subcats[i]+"\') ";
       } else {
         typeclause+= "type = \'"+subcats[i]+"\' OR ";
       }
@@ -215,6 +225,28 @@ function loadTypeClause(shiptype){
   }
 
   return typeclause;
+}
+function parseSizeClause(sizes, addAnd){
+  sizeclause = "";
+  if(sizes == "None"){
+    return ""
+  } else {
+    lws = sizes.split(':');
+    minlength = lws[0];
+    maxlength = lws[1];
+    minwidth = lws[2];
+    maxwidth = lws[3];
+    if(addAnd){
+      sizeclause = "AND (";
+    } else {
+      sizeclause = "( ";
+    }
+    //(width != 'Unknown' AND to_number(width, '999999') > 80)
+    sizeclause+=" (width != 'Unknown' AND (to_number(width, '999') <= "+maxwidth+" AND to_number(width, '999') >= "+minwidth+")) AND";
+    sizeclause+=" (length != 'Unknown' AND (to_number(length, '999') <= "+maxlength+" AND to_number(length, '999') >= "+minlength+"))";
+    sizeclause+=")"
+  }
+  return sizeclause;
 }
 function getShipTypeSubcategories(shiptype){
   var cats = getShipTypeCategories();

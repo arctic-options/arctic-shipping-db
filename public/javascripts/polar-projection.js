@@ -1,9 +1,10 @@
 
 
-window.urlPrefix = "http://hardison.nceas.ucsb.edu"
+window.urlPrefix = "http://localhost:3000"
 
 window.currLayer = null;
-window.animationTime = 100;
+window.animationTime = 150;
+window.slowAnimationTime = 500;
 window.theMap = null;
 window.styleMap = null;
 window.destProj = new OpenLayers.Projection("EPSG:3572");
@@ -24,11 +25,18 @@ window.categories = null;
 window.shiptypes = null;
 window.prevSeaIce = null;
 window.currSeaIce = null;
+window.prevFinished = false;
+
+window.maxShipLength = 350;
+window.minShipLength = 0;
+window.maxShipWidth = 80;
+window.minShipWidth = 0;
 
 //(-5955554.0585227,-4707645.05374313,5619445.9414773,4567354.94625687)
 //(-9036842.762,-9036842.762, 9036842.762, 9036842.762)
 //(9947619.660797345,-12487578.50853397,9962380.339202656,12502339.18693928)
 //(-4416084.91196798,-4221191.0136816, 4408915.08803202, 4303808.9863184);
+
 function init(){
   var slider = $("#time-slider");
   slider.slider({
@@ -63,8 +71,38 @@ function init(){
     updateLayers(true);
   });
 
+  $( "#shiplength" ).slider({
+    range: true,
+    min: 0,
+    max: 350,
+    values: [ 50, 250 ],
+    stop: function( event, ui ) {
+      updateLayers(true);
+    },
+    slide: function(event, ui) {
+      var minlength = getCurrentShipMinLength();
+      var maxlength = getCurrentShipMaxLength();
+      $('.shiplength_min').text("Minimum: "+minlength);
+      $('.shiplength_max').text("Maximum: "+maxlength);
+    }
+  });
+  $( "#shipwidth" ).slider({
+    range: true,
+    min: 0,
+    max: 80,
+    values: [ 10, 50 ],
+    stop: function( event, ui ) {
+      updateLayers(true);
+    },
+    slide: function(event, ui) {
+      var minlength = getCurrentShipMinWidth();
+      var maxlength = getCurrentShipMaxWidth();
+      $('.shipwidth_min').text("Minimum: "+minlength);
+      $('.shipwidth_max').text("Maximum: "+maxlength);
+    }
+  });
   var extent = new OpenLayers.Bounds(-9036842.762,-9036842.762, 9036842.762, 9036842.762);
-  //var extent = new OpenLayers.Bounds(-2927693.055900,-3248119.031000,3059854.14560,2356883.213300);
+
   window.mapExtent = extent;
   Proj4js.defs["EPSG:3572"] = "+title=Arctic Polar Stereographic +proj=laea +lat_0=90 +lon_0=-180 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs";
 
@@ -103,7 +141,7 @@ function init(){
       format: new OpenLayers.Format.GeoJSON(),
     })
   }); 
-
+  geojson_layer.events.on({"loadend": function(e){updateCountText(e.object.features.length)}});
   window.currLayer = geojson_layer;
 
   var imgStat = 'http://nsidc.org/cgi-bin/atlas_north?service=WMS&version =1.1.1&request =GetMap&srs=EPSG:3572&transparent=true&format=image/png&width=1000&height=1000&bbox=-9036842.762,-9036842.762, 9036842.762, 9036842.762&layers=sea_ice_extent_01'
@@ -139,12 +177,17 @@ function init(){
   window.animateTimer = window.setInterval(incrementDate, window.animationTime);
   setupFlagText();
 
-  /*
-  reactivate this to find out where points are located
-  var click = new OpenLayers.Control.Click();
-  theMap.addControl(click);
-  click.activate();
-  */
+}
+
+function getAnimationTime(){
+  var stypes = getShippingTextValues();
+  var fstate = getSelectedFlagValue();
+  if(stypes.length == 0 && fstate.length == 0 && isDefaultShipWidth() && isDefaultShipLength()){
+    return window.slowAnimationTime;
+  } else {
+    console.log("not default, using fast animation time")
+    return window.animationTime;
+  }
 }
 
 function getSeaIceLayer(which_layer){
@@ -213,9 +256,47 @@ function incrementDate(){
 }
 
 function getJSONURLForCurrentDate(){
-  return build_geojson_url_from_date();
+  shippingval = getShippingTextValues();
+  console.log("shippingval: ", shippingval);
+  if(shippingval == null || shippingval.length == 0){
+    shippingval = "None";
+  }
+  var size = "None"
+  if(!isDefaultShipLength() || !isDefaultShipWidth()){
+    var minlength = getCurrentShipMinLength();
+    var maxlength = getCurrentShipMaxLength();
+    var minwidth = getCurrentShipMinWidth();
+    var maxwidth = getCurrentShipMaxWidth();
+    size = minlength+":"+maxlength+":"+minwidth+":"+maxwidth;
+  }
+  flagval = getSelectedFlagValue();
+  var url = window.urlPrefix+"/time/"+window.currentDate+"/"+shippingval+"/"+flagval+"/"+size;
+  return url;
+}
+function isDefaultShipLength(){
+  return (getCurrentShipMaxLength() == window.maxShipLength && getCurrentShipMinLength() == window.minShipLength);
+}
+function isDefaultShipWidth(){
+  return (getCurrentShipMaxWidth() == window.maxShipWidth && getCurrentShipMinWidth() == window.minShipWidth);
 }
 
+function getCurrentShipMinWidth(){
+  var minwidth =  $( "#shipwidth" ).slider("option", "values")[0];
+  return minwidth;
+}
+
+function getCurrentShipMaxWidth(){
+  var maxw = $( "#shipwidth" ).slider("option", "values")[1];
+  return maxw;
+}
+function getCurrentShipMinLength(){
+  var minl  = $( "#shiplength" ).slider("option", "values")[0];
+  return minl;
+}
+function getCurrentShipMaxLength(){
+  var maxl = $( "#shiplength" ).slider("option", "values")[1];
+  return maxl;
+}
 function getSeaiceURLForCurrentDate(){
   var dt = parseCurrentDate();
   return build_seaice_url_from_date(dt.year, dt. month, dt.day);
@@ -288,6 +369,7 @@ function buildLegend(){
 
 function getShippingTextValues(){
   var selectedKeys = $("#shipping_types").val();
+  console.log("shipping keys: ", selectedKeys);
   if(selectedKeys == null){
     return [];
   }
@@ -298,13 +380,15 @@ function getShippingTextValues(){
     var val = getShipTypeForId(key);
     stvals.push(val);
   }
+  console.log("shipping text: ", stvals.toString());
   return stvals;   
 }
 
 function getShipTypeForId(id){
-  var shiptypes = window.shiptypes;
-  for(var i=0;i<shiptypes.length;i++){
-    if(shiptypes[i].id == id){
+  var stypes = window.shiptypes;
+  console.log("window ship types are ", stypes);
+  for(var i=0;i<stypes.length;i++){
+    if(stypes[i] != null && stypes[i].id == id){
       return shiptypes[i].text;
     }
   }
@@ -317,24 +401,28 @@ function loadAllRuleFilters(typeRules){
 }
 
 function updateLayers(remove_old_markers){
+  if(remove_old_markers){
+    animationTime = getAnimationTime();
+    if(animationTime == window.slowAnimationTime){
+      clearInterval(window.animateTimer);
+      window.animateTimer = window.setInterval(animationTime);
+    }
+  }
 
   newurl = getJSONURLForCurrentDate();
-  //numbaselayers = getNumBaseLayers();
-
   currLayer = new OpenLayers.Layer.Vector("markers",{
     strategies: [new OpenLayers.Strategy.Fixed()],
     styleMap: window.styleMap,  
     projection: window.destProj,
-
     protocol: new OpenLayers.Protocol.HTTP({
       url: newurl,
       format: new OpenLayers.Format.GeoJSON()
     })
   });
-  
-
+  currLayer.events.on({"loadend": function(e){updateCountText(e.object.features.length)}});
   cleanupSeaIce(remove_old_markers);
   markerlayers = window.theMap.getLayersByName("markers");
+
   if(markerlayers != null){
     if(remove_old_markers){
       for(i=0;i<markerlayers.length;i++){
@@ -366,9 +454,27 @@ function updateLayers(remove_old_markers){
   if(window.pauseAnimation){
     currLayer.redraw();
   }
-
 }
 
+function updateCountText(shipcount){
+  var featDict = {};
+  var markerlayers = window.theMap.getLayersByName("markers");
+  for(var j=0;j<=markerlayers.length;j++){
+    var ml = markerlayers[j];
+    
+    if(ml != null && ml.features != null){
+
+      for(var i=0;i<ml.features.length;i++){
+        var feat = ml.features[i];
+        
+        featDict[feat.data.mmsi] = feat.data.mmsi;
+        
+      }
+    }
+  }
+  var numships = Object.keys(featDict).length;
+  $('.shipcount').text(numships);
+}
 function killLayer(lyr){
   window.theMap.removeLayer(lyr);   
   lyr.destroy(); 
@@ -446,19 +552,12 @@ function getMonthText(month){
   return monthNames[month-1];
 }
 
-function build_geojson_url_from_date(){
-  shippingval = getShippingTextValues();
-  if(shippingval == null || shippingval.length == 0){
-    shippingval = "None";
-  }
-  flagval = getSelectedFlagValue();
-  var url = window.urlPrefix+"/time/"+window.currentDate+"/"+shippingval+"/"+flagval;
-  return url;
-}
-
-
 function getSelectedFlagValue(){
-  return window.flagStates.toString();
+  var val = window.flagStates.toString();
+  if(val == null || val.trim().length == 0 || val == ["All"]){
+    val = "All"
+  }
+  return val;
 }
 
 function build_seaice_url_from_date(year, month, day, hour){
@@ -596,6 +695,8 @@ function loadShipCategories(){
                   {id:13, text:"Working & Support"}];
 
   window.shiptypes = shiptypes;
+
+
   window.categories = categories;
   $("#shipping_types").select2({
     data: shiptypes,
@@ -611,7 +712,6 @@ function loadShipCategories(){
     buildLegend();
   });
 
-
   buildLegend();
   return typeRules;
 }
@@ -623,7 +723,10 @@ function setupFlagText(){
     $("#flagstate").select2({
       data: fs,
       allowClear:true,
-      placeholder: 'Enter a Country Name',
+      placeholder: {
+        id: -1,
+        text: 'Enter a Country Name',
+      },
       multiple:true
     });
 
