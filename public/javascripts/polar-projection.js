@@ -1,6 +1,6 @@
 
 
-window.urlPrefix = "http://hardison.nceas.ucsb.edu"
+urlPrefix = "http://hardison.nceas.ucsb.edu"
 //window.urlPrefix = "http://localhost:3000"
 window.currLayer = null;
 //animation speed and pause state
@@ -535,6 +535,7 @@ function cleanupSeaIce(remove_old_markers){
       if(window.pauseAnimation){
         oldseaice.setOpacity(0.0);
       }
+      seaiceLayer.redraw();
     } else {
       if(window.prevSeaIce != null && (window.prevSeaIce != window.currSeaIce)){
         console.log("fading old sea ice, ", window.currSeaIce);
