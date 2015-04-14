@@ -131,12 +131,11 @@ router.get('/time/:currdate/:shiptype/:flagstates/:shipsize', function(req, res,
     end_date = year+"-"+month+"-"+day+" "+hour+":"+endminute+":00";
 
     var typeclause = parseTypeClause(shipping_type);
-    var flagclause = parseFlagStates(req.params.flagstates, shipping_type.length != 0);
+    var flagclause = parseFlagStates(req.params.flagstates, typeclause.length != 0);
 
 
     var bothempty = (flagclause.trim().length == 0 && typeclause.trim().length == 0);
     var sizeclause = parseSizeClause(req.params.shipsize, !bothempty);
-    console.log("sizeclause: ", sizeclause)
     featureCollection = new FeatureCollection();
 
    
@@ -158,7 +157,6 @@ router.get('/time/:currdate/:shiptype/:flagstates/:shipsize', function(req, res,
       }
       res.send(featureCollection);
       res.end();
-      
     });
   } catch(err){
     console.log("error searching: ",err)
@@ -177,10 +175,15 @@ function parseFlagStates(flagstates, addAnd){
       for(var i=0;i<fs_keys.length;i++){
         
         if(i == 0){
-          flagclause+= " AND ( ";
+          if(addAnd){
+            flagclause+="AND (";
+          } else {
+            flagclause+= " ( ";  
+          }
+          
         }
         if(i == fs_keys.length - 1){
-          flagclause+=" flag LIKE \'"+fs_keys[i]+"\%') AND ";
+          flagclause+=" flag LIKE \'"+fs_keys[i]+"\%') ";
         } else {
           flagclause+=" flag LIKE \'"+fs_keys[i]+"\%' OR ";
         }
