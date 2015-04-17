@@ -116,14 +116,14 @@ router.get('/', function(req, res, next) {
 router.get('/time/:currdate/:shiptype/:flagstates/:shipsize', function(req, res, next) {
   try{
     thedate = parseCurrentDate(req.params.currdate);
-
     shipping_type = req.params.shiptype;
+
     year = thedate.year;
     month = padValue(thedate.month);
     day = padValue(thedate.day);
     hour = padValue(thedate.hour);
-    minute = parseInt(thedate.minute);
 
+    minute = parseInt(thedate.minute);
     startminute = getMinute(minute);
     endminute = getMinute(minute+1);
 
@@ -131,8 +131,8 @@ router.get('/time/:currdate/:shiptype/:flagstates/:shipsize', function(req, res,
     end_date = year+"-"+month+"-"+day+" "+hour+":"+endminute+":00";
 
     var typeclause = parseTypeClause(shipping_type);
-    var flagclause = parseFlagStates(req.params.flagstates, typeclause.length != 0);
-
+    var flagstates = req.params.flagstates;
+    var flagclause = parseFlagStates(flagstates, typeclause.length != 0);
 
     var bothempty = (flagclause.trim().length == 0 && typeclause.trim().length == 0);
     var sizeclause = parseSizeClause(req.params.shipsize, !bothempty);
@@ -180,12 +180,12 @@ function parseFlagStates(flagstates, addAnd){
           } else {
             flagclause+= " ( ";  
           }
-          
         }
+        var val = sequelize.escape(fs_keys[i]+"%");
         if(i == fs_keys.length - 1){
-          flagclause+=" flag LIKE \'"+fs_keys[i]+"\%') ";
+          flagclause+=" flag LIKE "+val+") ";
         } else {
-          flagclause+=" flag LIKE \'"+fs_keys[i]+"\%' OR ";
+          flagclause+=" flag LIKE "+val+" OR ";
         }
       }
       return flagclause;
@@ -217,10 +217,11 @@ function parseTypeClause(shiptype){
       if(i == 0){
         typeclause+="( ";
       }
+      var subcat = sequelize.escape(subcats[i]);
       if(i == subcats.length - 1){
-        typeclause+=" type = \'"+subcats[i]+"\') ";
+        typeclause+=" type = "+subcat+") ";
       } else {
-        typeclause+= "type = \'"+subcats[i]+"\' OR ";
+        typeclause+= "type = "+subcat+" OR ";
       }
     }
   } catch(err){
@@ -235,10 +236,10 @@ function parseSizeClause(sizes, addAnd){
     return ""
   } else {
     lws = sizes.split(':');
-    minlength = lws[0];
-    maxlength = lws[1];
-    minwidth = lws[2];
-    maxwidth = lws[3];
+    var minlength = sequelize.escape(lws[0]);
+    var maxlength = sequelize.escape(lws[1]);
+    var minwidth = sequelize.escape(lws[2]);
+    var maxwidth = sequelize.escape(lws[3]);
     if(addAnd){
       sizeclause = "AND (";
     } else {
